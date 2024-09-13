@@ -58,7 +58,7 @@ typedef struct objeto {
 typedef struct juego {
     cocina_t cocina;
     mozo_t mozo;
-    mesa_t mesas[MAX_MESAS ];
+    mesa_t mesas[MAX_MESAS];
     int cantidad_mesas;
     objeto_t herramientas[MAX_HERRAMIENTAS ];
     int cantidad_herramientas;
