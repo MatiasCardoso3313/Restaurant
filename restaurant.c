@@ -17,6 +17,18 @@ void inicializar_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], int tope){
     }
 }
 
+bool validar_coordenada(mesa_t mesa){
+    bool es_valido=true;
+    if(mesa.cantidad_comensales==1)
+        if ((mesa.posicion->fil<0 || mesa.posicion->fil>=MAX_FILAS) || (mesa.posicion->col<0 || mesa.posicion->col>=MAX_COLUMNAS))
+            es_valido=false;
+    else
+        for(int i=0; i<MAX_COMENSALES; i++)
+            if ((mesa.posicion[i].fil<0 || mesa.posicion[i].fil>=MAX_FILAS) || (mesa.posicion[i].col<0 || mesa.posicion[i].col>=MAX_COLUMNAS))
+                es_valido=false;
+    return es_valido;
+}
+
 void reemplazar_elemento(char terreno[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion, char elemento){
     terreno[posicion.fil][posicion.col]=elemento;
 }
@@ -62,25 +74,30 @@ void ingresar_posicion_mesa(mesa_t mesa, coordenada_t posición){
     }
 }
 void colocar_mesas(char terreno[MAX_FILAS][MAX_COLUMNAS], mesa_t mesa, coordenada_t posicion){
-    if (mesa.cantidad_comensales==MIN_COMENSALES && puede_colocarse_mesa(terreno[MAX_FILAS][MAX_COLUMNAS],mesa)){
-        while (!puede_colocarse_mesa){
+    if (mesa.cantidad_comensales==MIN_COMENSALES){
+        while ((!puede_colocarse_mesa(terreno[MAX_FILAS][MAX_COLUMNAS], mesa)) || !validar_coordenada(mesa)){
             mesa.posicion[0].fil=posicion.fil;
             mesa.posicion[0].col=posicion.col;
             puede_colocarse_mesa(terreno[MAX_FILAS][MAX_COLUMNAS], mesa);
-        }
-    
-
-    }
-    
-    
-    
+            validar_coordenada(mesa);
+        }reemplazar_elemento(terreno[MAX_FILAS][MAX_COLUMNAS], mesa.posicion[0], MESA);
+    }else if (mesa.cantidad_comensales==MAX_COMENSALES){
+        for (int i = 0; i < mesa.cantidad_comensales; i++){
+            while ((!puede_colocarse_mesa(terreno[MAX_FILAS][MAX_COLUMNAS], mesa)) || !validar_coordenada(mesa)){
+            mesa.posicion[i].fil=posicion.fil;
+            mesa.posicion[i].col=posicion.col;
+            puede_colocarse_mesa(terreno[MAX_FILAS][MAX_COLUMNAS], mesa);
+            validar_coordenada(mesa);
+        }reemplazar_elemento(terreno[MAX_FILAS][MAX_COLUMNAS], mesa.posicion[i], MESA);
+        }   
+    }   
 }
 
 void inicializar_juego(juego_t *juego){
 
     juego->cocina.posicion.fil;
     juego->cocina.posicion.col;
-
 }
 void mostrar_juego(juego_t juego){
+
 }
