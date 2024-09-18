@@ -4,14 +4,12 @@
 #include<time.h>
 #include "restaurant.h"
 #include "complemento.h"
-const int AREA_MESA_DE_CUATRO=2;
-const int TOTAL_MESAS_INDIVIDUALES=6;
-const int TOTAL_MESAS_DE_CUATRO=4;
 int main(){
     srand((unsigned)time(NULL));
     juego_t juego;
     /* MESAS */
-    juego.cantidad_mesas=10;
+    juego.cantidad_mesas=(TOTAL_MESAS_DE_CUATRO+TOTAL_MESAS_INDIVIDUALES);
+    juego.cantidad_herramientas=(CANTIDAD_MONEDAS + CANTIDAD_PATINES + UNICA_MOPA);
     for (int i = 0; i < juego.cantidad_mesas; i++){
         if (i<TOTAL_MESAS_INDIVIDUALES)
             juego.mesas[i].cantidad_comensales=MIN_COMENSALES;
@@ -54,8 +52,33 @@ int main(){
     do{
         juego.mozo.posicion.fil=(rand() % 19);
         juego.mozo.posicion.col=(rand() % 19);
-    } while(!chequeo_coordenada_valida(juego.cocina.posicion) || !coordenada_ocupada(juego, &juego.cocina.posicion));
+    } while(!coordenada_ocupada(juego, &juego.mozo.posicion));
     /* MOPA */
+    do{
+        juego.herramientas[POSICION_MOPA].posicion.fil=(rand() % 19);
+        juego.herramientas[POSICION_MOPA].posicion.col=(rand() % 19);
+    } while (!coordenada_ocupada(juego, &juego.herramientas[0].posicion));
+    /* MONEDAS */
+    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_MONEDAS; moneda++){
+        juego.herramientas[moneda].tipo=MONEDA;
+        do{
+            juego.herramientas[moneda].posicion.fil=(rand() % 19);
+            juego.herramientas[moneda].posicion.col=(rand() % 19);
+        } while (!coordenada_ocupada(juego, &juego.herramientas[moneda].posicion));
+    }
+    /* PATINES */
+    for (int patin = PRIMER_LUGAR_PATINES; patin < juego.cantidad_herramientas; patin++){
+        juego.herramientas[patin].tipo=PATIN;
+        do{
+            juego.herramientas[patin].posicion.fil=(rand() % 19);
+            juego.herramientas[patin].posicion.col=(rand() % 19);
+        } while (!coordenada_ocupada(juego, &juego.herramientas[patin].posicion));    
+    }
+    /* CHARCOS */
+    
+    
     inicializar_juego(&juego);
+        
+    mostrar_juego(juego);
     return 0;
 }

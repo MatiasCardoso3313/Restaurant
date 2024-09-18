@@ -3,11 +3,12 @@
 #include<stdlib.h>
 #include "restaurant.h"
 #include "complemento.h"
-const int TOTAL_MESAS=1;
 const char MESA='T';
 const char COCINA='C';
 const char LINGUINI='L';
-const char MOPA='M';
+// const char MOPA='O';
+// const char MONEDA='M';
+
 
 const char VACIO=' ';
 
@@ -17,30 +18,52 @@ void reemplazar_elemento(char terreno[MAX_FILAS][MAX_COLUMNAS],char elemento, co
 
 bool coordenada_ocupada(juego_t juego, coordenada_t* posicion){
     // Comprobar si alguna mesa está en esa posición
-    bool esta_ocupada=true;
+    bool no_esta_ocupada=true;
     for (int i = 0; i < juego.cantidad_mesas; i++){
         for (int j = 0; j < juego.mesas[i].cantidad_comensales; j++){
             if (juego.mesas[i].posicion[j].fil==posicion->fil && juego.mesas[i].posicion[j].col==posicion->col) {
-                esta_ocupada=false;  // Posición ocupada por una mesa
+                no_esta_ocupada=false;  // Posición ocupada por una mesa
             }
         }
     }
     if (&juego.cocina.posicion==posicion){
-        if ((posicion->fil==juego.cocina.posicion.fil) && (posicion->col==juego.cocina.posicion.col)){
-            esta_ocupada=false;
-        }
+        if ((posicion->fil==juego.cocina.posicion.fil) && (posicion->col==juego.cocina.posicion.col))
+            no_esta_ocupada=false;
     }
-    if (&juego.herramientas->tipo)
-    {
-        /* code */
+    if (&juego.mozo.posicion==posicion){
+        if ((posicion->fil==juego.mozo.posicion.fil) && (posicion->col==juego.mozo.posicion.col))
+            no_esta_ocupada=false;
+        
     }
+    if (&juego.herramientas[0].posicion==posicion){
+        if ((posicion->fil==juego.herramientas->posicion.fil) && (posicion->col==juego.herramientas->posicion.col))
+            no_esta_ocupada=false;
+    }
+    int lugar_moneda = PRIMER_LUGAR_MONEDAS;
+    while((no_esta_ocupada==true) && (lugar_moneda<=CANTIDAD_MONEDAS)){
+        if (&juego.herramientas[lugar_moneda].posicion==posicion){
+            coordenada_t posicion_herramienta=juego.herramientas[lugar_moneda].posicion;
+            if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
+            no_esta_ocupada=false;
+        }lugar_moneda++;   
+    }
+    int lugar_patin = PRIMER_LUGAR_PATINES;
+    while ((no_esta_ocupada==true) && (lugar_patin<=juego.cantidad_herramientas)){
+        if (&juego.herramientas[lugar_patin].posicion==posicion){
+            coordenada_t posicion_herramienta=juego.herramientas[lugar_patin].posicion;
+            if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
+                no_esta_ocupada=false;
+        }lugar_patin++;
+    }
+    
+
     
     
 
     // Aquí también podrías verificar otros elementos (mopa, monedas, charcos, etc.)
     // Si tienes más objetos, repite el mismo tipo de comprobación
 
-    return esta_ocupada;  // Si no está ocupada, la posición es válida
+    return no_esta_ocupada;  // Si no está ocupada, la posición es válida
 }
 
 
@@ -89,8 +112,8 @@ bool validar_coordenada_mesa(mesa_t mesa){
 }
 
 void inicializar_juego(juego_t *juego){
+    juego->herramientas->tipo=MOPA;
     
-    mostrar_juego(*juego);
 }
 void mostrar_juego(juego_t juego){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -109,10 +132,18 @@ void mostrar_juego(juego_t juego){
                 reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
             }
         }
-        
     terreno[juego.cocina.posicion.fil][juego.cocina.posicion.col]=COCINA;
     terreno[juego.mozo.posicion.fil][juego.mozo.posicion.col]=LINGUINI;
-
+    terreno[juego.herramientas[0].posicion.fil][juego.herramientas[0].posicion.col]=MOPA;
+    for (int moneda = 1; moneda <= CANTIDAD_MONEDAS; moneda++){
+        coordenada_t posicion_moneda=juego.herramientas[moneda].posicion;
+        terreno[posicion_moneda.fil][posicion_moneda.col]=juego.herramientas[moneda].tipo;
+    }
+    for (int patin = PRIMER_LUGAR_PATINES; patin < juego.cantidad_herramientas; patin++){
+        coordenada_t posicion_patin=juego.herramientas[patin].posicion;
+        terreno[posicion_patin.fil][posicion_patin.col]=juego.herramientas[patin].tipo;
+    }
+    
     for (int fila = 0; fila < MAX_FILAS; fila++){
         for (int columna = 0; columna < MAX_COLUMNAS; columna++){
             printf("|");
