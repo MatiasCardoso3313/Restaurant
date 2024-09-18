@@ -3,46 +3,59 @@
 #include<stdlib.h>
 #include<time.h>
 #include "restaurant.h"
-const int CANTIDAD_MESAS=10;
-const int MIN_COMENSALES=1;
+#include "complemento.h"
 const int AREA_MESA_DE_CUATRO=2;
+const int TOTAL_MESAS_INDIVIDUALES=6;
+const int TOTAL_MESAS_DE_CUATRO=4;
 int main(){
     srand((unsigned)time(NULL));
     juego_t juego;
-    for (int i = 0; i < CANTIDAD_MESAS; i++){
-        if (i<6)
-            juego.mesas[i].cantidad_comensales=1;
+    /* MESAS */
+    juego.cantidad_mesas=10;
+    for (int i = 0; i < juego.cantidad_mesas; i++){
+        if (i<TOTAL_MESAS_INDIVIDUALES)
+            juego.mesas[i].cantidad_comensales=MIN_COMENSALES;
         else
-            juego.mesas[i].cantidad_comensales=4;
+            juego.mesas[i].cantidad_comensales=MAX_COMENSALES;
+        
     }
-    for(int a; a<CANTIDAD_MESAS; a++){
+    for(int a=0; a<juego.cantidad_mesas; a++){
         coordenada_t posicion;
         posicion.fil=-1;
         posicion.col=-1;
-        if(juego.mesas->cantidad_comensales==MIN_COMENSALES){
-            while (!(validar_coordenada(juego.mesas[a]))){
-                posicion.fil = rand() % 20;
-                posicion.col = rand() % 20;
+        if((juego.mesas[a].cantidad_comensales) == MIN_COMENSALES){
+            do{
+                posicion.fil = (rand() % 19);
+                posicion.col = (rand() % 19);
                 modificar_posicion(posicion, juego.mesas[a].posicion);
-                validar_coordenada(juego.mesas[a]);
-            }
-        }else if (juego.mesas->cantidad_comensales==MAX_COMENSALES){
-            while (!validar_coordenada(juego.mesas[a])){
+            }while (!(validar_coordenada_mesa(juego.mesas[a])) || !validar_espacio_alrededor_de_mesas(juego, juego.mesas[a], a));
+        }else if (juego.mesas[a].cantidad_comensales==MAX_COMENSALES){
+            posicion.fil = (rand() % 19);
+            posicion.col = (rand() % 19);
+            do{
                 for(int j=0; j < MAX_COMENSALES;j++){
-                    posicion.fil = (rand() % 20);
-                    posicion.col = (rand() % 20);
                     if (j==1)
                         posicion.col++;
-                    else if (j==2)
-                        posicion.fil++;
-                    else if (j==3){
-                        posicion.fil++; posicion.col++;
-                    }
-                    modificar_posicion(posicion, juego.mesas[a].posicion[j]);
-                    validar_coordenada(juego.mesas[a]);
+                    else if (j==2){
+                        posicion.fil++; posicion.col--;
+                    }else if (j==3)
+                        posicion.col++;
+                    modificar_posicion(posicion, &juego.mesas[a].posicion[j]);
                 }
-            }
+            }while (!validar_coordenada_mesa(juego.mesas[a]) || !validar_espacio_alrededor_de_mesas(juego, juego.mesas[a], a));
         }
-    }mostrar_juego(juego);
+    }
+    /* COCINA */
+    do{
+        juego.cocina.posicion.fil= (rand() % 19);
+        juego.cocina.posicion.col= (rand() % 19);
+    } while(!chequeo_coordenada_valida(juego.cocina.posicion) || !coordenada_ocupada(juego, &juego.cocina.posicion));
+    /* LINGUINI */
+    do{
+        juego.mozo.posicion.fil=(rand() % 19);
+        juego.mozo.posicion.col=(rand() % 19);
+    } while(!chequeo_coordenada_valida(juego.cocina.posicion) || !coordenada_ocupada(juego, &juego.cocina.posicion));
+    /* MOPA */
+    inicializar_juego(&juego);
     return 0;
 }
