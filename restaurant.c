@@ -36,7 +36,7 @@ bool coordenada_ocupada(juego_t* juego, coordenada_t* posicion){
             no_esta_ocupada=false;
     }
     int lugar_moneda = PRIMER_LUGAR_MONEDAS;
-    while((no_esta_ocupada==true) && (lugar_moneda<=CANTIDAD_MONEDAS)){
+    while((no_esta_ocupada==true) && (lugar_moneda<=CANTIDAD_TOTAL_MONEDAS)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_moneda].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
@@ -99,12 +99,16 @@ bool validar_coordenada_mesa(mesa_t mesa){
         comensal++;
     }return es_valido;
 }
-
+/*
+* Pre condiciones: -
+* Post condiciones: Inicializará el juego , cargando toda la información inicial de Linguini , las
+* mesas , las herramientas y los obstáculos.
+*/
 void inicializar_juego(juego_t *juego){
     juego->dinero=0;
     juego->movimientos=0;
     juego->cantidad_mesas=0;
-    juego->cantidad_herramientas=0;
+    juego->cantidad_herramientas=(CANTIDAD_TOTAL_MONEDAS + CANTIDAD_TOTAL_PATINES + UNICA_MOPA);
     juego->cantidad_obstaculos=TOTAL_OBSTACULOS;
     /* MESAS */
     while(juego->cantidad_mesas<(TOTAL_MESAS_INDIVIDUALES + TOTAL_MESAS_DE_CUATRO)){
@@ -166,7 +170,7 @@ void inicializar_juego(juego_t *juego){
                 juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[numero_plato]=VACIO;
                 juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos++;
             }
-            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].id_mesa=juego->mesas[i].cantidad_comensales&i;
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].id_mesa=juego->mesas[juego->mozo.cantidad_pedidos].cantidad_comensales;
             juego->mozo.pedidos[juego->mozo.cantidad_pedidos].tiempo_preparacion=-1;
             juego->mozo.cantidad_pedidos++;
         }
@@ -177,9 +181,9 @@ void inicializar_juego(juego_t *juego){
                 juego->mozo.bandeja[juego->mozo.cantidad_bandeja].platos[numero_plato]=VACIO;
                 juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos++;
             }
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].id_mesa=juego->mesas[i].cantidad_comensales&i;
+            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].id_mesa=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
             juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion=-1;
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=juego->mesas[i].cantidad_comensales;
+            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
             juego->mozo.cantidad_bandeja++;
         }
     }
@@ -192,9 +196,8 @@ void inicializar_juego(juego_t *juego){
         juego->herramientas[LUGAR_MOPA].posicion.fil=(rand() % 19);
         juego->herramientas[LUGAR_MOPA].posicion.col=(rand() % 19);
     } while (!coordenada_ocupada(juego, &juego->herramientas[0].posicion));
-    juego->cantidad_herramientas++;
     /* MONEDAS */
-    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_MONEDAS; moneda++){
+    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
         juego->herramientas[moneda].tipo=MONEDA;
         do{
             juego->herramientas[moneda].posicion.fil=(rand() % 19);
@@ -219,7 +222,27 @@ void inicializar_juego(juego_t *juego){
         
     }
     mostrar_juego(*juego);
+    while (estado_juego(*juego)==0){
+        char accion=' ';
+        printf("HAZ UNA ACCION=>");
+        scanf(" %c", &accion);
+        while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
+            system("clear");
+            mostrar_juego(*juego);
+            printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN =>");
+            scanf(" %c", &accion);
+        }
+        system("clear");
+        realizar_jugada(juego,accion);
+        mostrar_juego(*juego);
+    }
 }
+/*
+* Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego ` y la acción
+* debe ser válida.
+* Post condiciones: Realizará la acción recibida por parámetro. Para este primer TP solo se
+* implementará el funcionamiento para mover al jugador y agarrar/soltar la mopa.
+*/
 void realizar_jugada(juego_t *juego , char accion){
     chequeo_coordenada_valida(juego->mozo.posicion);
     if (accion==ACCION_ABAJO && juego->mozo.posicion.fil!=(MAX_FILAS-1)){
@@ -270,9 +293,22 @@ void realizar_jugada(juego_t *juego , char accion){
             printf("     ---¡¡¡NO PUEDES SOLTAR LA MOPA EN ESTA POSICION!!!---\n");  
     }
 }
+/*
+* Pre condiciones: El juego deberá estar inicializado previamente con `inicializar_juego `
+* Post condiciones: Devuelve:
+*       --> 1 si es ganado
+*       --> -1 si es perdido
+*       --> 0 si se sigue jugando
+* El juego se dará por ganado cuando se termina el día y se consiguieron las monedas necesarias.
+* Se dará por perdido si se termina el día y no se llegó al monto.
+*/
 int estado_juego(juego_t juego){
     return 0;
 }
+/*
+* Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego `.
+* Post condiciones: Imprime el juego por pantalla.
+*/
 void mostrar_juego(juego_t juego){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     for (int i = 0; i < MAX_FILAS; i++){
@@ -292,7 +328,7 @@ void mostrar_juego(juego_t juego){
         }
     terreno[juego.cocina.posicion.fil][juego.cocina.posicion.col]=COCINA;
     terreno[juego.herramientas[0].posicion.fil][juego.herramientas[0].posicion.col]=MOPA;
-    for (int moneda = 1; moneda <= CANTIDAD_MONEDAS; moneda++){
+    for (int moneda = 1; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
         coordenada_t posicion_moneda=juego.herramientas[moneda].posicion;
         terreno[posicion_moneda.fil][posicion_moneda.col]=juego.herramientas[moneda].tipo;
     }
@@ -311,13 +347,20 @@ void mostrar_juego(juego_t juego){
         printf("=");
     }
     printf("\n");
+    int mesa=0;
     for (int fila = 0; fila < MAX_FILAS; fila++){
         for (int columna = 0; columna < MAX_COLUMNAS; columna++){
             printf("|");
             printf(" %c ", terreno[fila][columna]);
-            if (columna==(MAX_COLUMNAS-1))
-                printf("|\n");
-        }
+            if (columna==(MAX_COLUMNAS-1)){
+                printf("|  ");
+                if ( fila%2==0){
+                    printf("[PEDIDO MESA N°%i-%i]\n", mesa+1, juego.mozo.pedidos[mesa].id_mesa);
+                    mesa++;
+                }else
+                    printf("\n");
+            }
+        }   
     }for (int i = 0; i < 81; i++){
         printf("=");
     }
@@ -333,4 +376,5 @@ void mostrar_juego(juego_t juego){
     printf("[MOPA:- %c -] ", mopa);
     printf("[DINERO: - %i -] ",juego.dinero);
     printf("\n");
+    printf("%i", juego.cantidad_mesas);
 }
