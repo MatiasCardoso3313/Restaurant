@@ -16,13 +16,5 @@ int main(){
         system("clear");
         realizar_jugada(&juego,accion);
         mostrar_juego(juego);
-    }if (estado_juego(juego)==1){
-        system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|G A N A S T E|-\n\n\n\n\n\n\n\n\n\n\n\n");
-    }else{
-        system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|P E R D I S T E|-\n\n\n\n\n\n\n\n\n\n\n\n");
-
-    }
-    return 0;
+    };
 }

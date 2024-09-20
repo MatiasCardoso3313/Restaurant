@@ -6,8 +6,6 @@
 const int ENTERO_INVALIDO=-1;
 const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
-const int MAX_MOVIMIENTOS = 10;
-const int DINERO_NECESARIO = -1;
 /* ELEMENTOS VALIDOS */
 const char MOPA='O';
 const char MONEDA='M';
@@ -387,11 +385,6 @@ void realizar_jugada(juego_t *juego , char accion){
 * Se dará por perdido si se termina el día y no se llegó al monto.
 */
 int estado_juego(juego_t juego){
-    if (juego.movimientos==MAX_MOVIMIENTOS){
-        return -1;
-    }if (juego.dinero==DINERO_NECESARIO){
-        return 1;
-    }
     return 0;
 }
 /*
