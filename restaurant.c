@@ -1,23 +1,76 @@
 #include<stdio.h>
-#include<stdbool.h>
 #include<stdlib.h>
 #include "restaurant.h"
-#include "complemento.h"
 
-void reemplazar_elemento(char terreno[MAX_FILAS][MAX_COLUMNAS],char elemento, coordenada_t posicion){
+/* CONVENCIONES */
+const int ENTERO_INVALIDO=-1;
+const int TOTAL_NUMEROS_ALEATORIOS=19;
+const int DISTANCIA_MINIMA_MESAS=1;
+const int MAX_MOVIMIENTOS = 10;
+const int DINERO_NECESARIO = -1;
+/* ELEMENTOS VALIDOS */
+const char MOPA='O';
+const char MONEDA='M';
+const char PATIN='P';
+const char MESA='T';
+const char CHARCO='H';
+const char LINGUINI='L';
+const char COCINA='C';
+const char VACIO=' ';
+/* POSICION EN VECTORES */
+const int LUGAR_MOPA= 0;
+const int PRIMER_LUGAR_MONEDAS= 1;
+const int PRIMER_LUGAR_PATINES= 9;
+/* CANTIDAD Y TOTALIDAD DE ELEMENTOS */
+const int MIN_COMENSALES= 1;
+const int TOTAL_MESAS_INDIVIDUALES= 6;
+const int TOTAL_MESAS_DE_CUATRO= 4;
+const int TOTAL_OBSTACULOS= 5;
+const int CANTIDAD_CHARCOS= 5;
+const int CANTIDAD_TOTAL_MONEDAS= 8;
+const int CANTIDAD_TOTAL_PATINES= 5;
+/* ACCIONES VALIDAS */
+const char ACCION_DERECHA=  'D';
+const char ACCION_IZQUIERDA=  'A';
+const char ACCION_ARRIBA=  'W';
+const char ACCION_ABAJO=  'S';
+const char AGARRA_O_SOLTAR_MOPA=  'O';
+/*
+*   Pre condiciones: El terreno tiene que estar inicializado con elementos validos, el elemento que recibe tiene que
+*                    ser un ELEMENTO VALIDO.
+*   Post condiciones: Reemplaza el caracter que esta en la fila y columna que vienen dados por posicion, el caracter
+*                     final es el de elemento.   
+*/
+void reemplazar_elemento(char terreno[MAX_FILAS][MAX_COLUMNAS], char elemento, coordenada_t posicion){
     terreno[posicion.fil][posicion.col]=elemento;
 }
+/*
+*   Pre condiciones: Juego debe tener al menos una mesa inicializada.
+*   Post condiciones: Chequea si hay una mesa en la posición ingresada, si hay una mesa en esa posicion
+*                     devuelve un booleano con valor true, caso contrario devuelve el booleano con valor false.
+*/
 bool mesa_en_el_camino(juego_t juego, coordenada_t* posicion){
     bool hay_mesa_en_camino=false;
-    for (int i = 0; i < juego.cantidad_mesas; i++){
-        for (int j = 0; j < juego.mesas[i].cantidad_comensales; j++){
+    int i=0;
+    while((i<juego.cantidad_mesas) && (!hay_mesa_en_camino)){
+        int j=0;
+        while(j<juego.mesas[i].cantidad_comensales && (!hay_mesa_en_camino)){
             if (juego.mesas[i].posicion[j].fil==posicion->fil && juego.mesas[i].posicion[j].col==posicion->col) {
                 hay_mesa_en_camino=true;
-            }
-        }
+            }j++;
+        }i++;
     }return hay_mesa_en_camino;
 }
-bool coordenada_ocupada(juego_t* juego, coordenada_t* posicion){
+/*
+*   Pre condiciones: Juego debe tener elementos inicializados con sus respectivas posiciones validas.
+*   Post condiciones: Compara la posicion ingresada por referencia con cada posicion de cada elemento
+*                     de juego, tambien establece que si tiene la misma direccion que con lo que se compara,
+*                     procede a no compararar las posiciones, ya que si fueran exactamente la misma posicion siempre
+*                     devolveria el booleano con valor falso. Luego si no hay elementos en la misma 
+*                     posicion devuelve un booleano con valor true, caso contrario devuelve el booleano 
+*                     con valor false.
+*/
+bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
     if (mesa_en_el_camino(*juego, posicion)){
         no_esta_ocupada=false;
@@ -26,24 +79,24 @@ bool coordenada_ocupada(juego_t* juego, coordenada_t* posicion){
         if ((posicion->fil==juego->cocina.posicion.fil) && (posicion->col==juego->cocina.posicion.col))
             no_esta_ocupada=false;    
     }
-    if (&juego->mozo.posicion!=posicion && !juego->mozo.tiene_mopa){
+    if (&juego->mozo.posicion!=posicion){
         if ((posicion->fil==juego->mozo.posicion.fil) && (posicion->col==juego->mozo.posicion.col)){
             no_esta_ocupada=false;
         }   
     }
-    if (&juego->herramientas[0].posicion!=posicion){
+    if (&juego->herramientas[LUGAR_MOPA].posicion!=posicion){
         if ((posicion->fil==juego->herramientas->posicion.fil) && (posicion->col==juego->herramientas->posicion.col))
             no_esta_ocupada=false;
     }
-    int lugar_moneda = PRIMER_LUGAR_MONEDAS;
-    while((no_esta_ocupada==true) && (lugar_moneda<=CANTIDAD_TOTAL_MONEDAS)){
+    int lugar_moneda = 0;
+    while((no_esta_ocupada==true) && (lugar_moneda<=juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_moneda].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
             no_esta_ocupada=false;
         }lugar_moneda++;   
     }
-    int lugar_patin = PRIMER_LUGAR_PATINES;
+    int lugar_patin = 0;
     while ((no_esta_ocupada==true) && (lugar_patin<=juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_patin].posicion;
@@ -52,7 +105,7 @@ bool coordenada_ocupada(juego_t* juego, coordenada_t* posicion){
         }lugar_patin++;
     }
     int lugar_charco = 0;
-    while ((no_esta_ocupada==true) && (lugar_charco<CANTIDAD_CHARCOS)){
+    while ((no_esta_ocupada==true) && (lugar_charco<juego->cantidad_herramientas)){
         if (&juego->obstaculos[lugar_charco].posicion!=posicion){
             coordenada_t posicion_obstaculo=juego->obstaculos[lugar_charco].posicion;
             if ((posicion->fil==posicion_obstaculo.fil) && (posicion->col==posicion_obstaculo.col)){
@@ -62,42 +115,50 @@ bool coordenada_ocupada(juego_t* juego, coordenada_t* posicion){
     }
     return no_esta_ocupada;
 }
+/*
+*   Pre condiciones: La variable numero de mesas debe ser valido y estan en el rango del vector de mesas
+*                    de juego.
+*   Post condiciones: Chequea que al rededor de la nueva mesa no haya otras mesas, si hay una mesa al rededo
+*                     devuelve un booleano con valor false, caso contrario devuelve el booleano. 
+*/
 bool validar_espacio_alrededor_de_mesas(juego_t juego, mesa_t nueva_mesa, int numero_de_mesas) {
     bool sin_mesas_cerca=true;
-    for (int mesa_anterior = 0; mesa_anterior < numero_de_mesas; mesa_anterior++) {
+    int mesa_anterior=0;
+    while(mesa_anterior<numero_de_mesas && sin_mesas_cerca){
         mesa_t mesa = juego.mesas[mesa_anterior];
-        for (int i = 0; i < mesa.cantidad_comensales; i++) {
+        int i=0;
+        while(i < mesa.cantidad_comensales && sin_mesas_cerca){
             coordenada_t posicion = mesa.posicion[i];
-            for (int j = 0; j < nueva_mesa.cantidad_comensales; j++) {
+            int j=0;
+            while(j<nueva_mesa.cantidad_comensales && sin_mesas_cerca) {
                 coordenada_t nueva_posicion = nueva_mesa.posicion[j];
-                if ((abs(posicion.fil - nueva_posicion.fil) <= 1) && (abs(posicion.col - nueva_posicion.col) <= 1)) {
+                if ((abs(posicion.fil - nueva_posicion.fil) <= DISTANCIA_MINIMA_MESAS) && (abs(posicion.col - nueva_posicion.col) <= DISTANCIA_MINIMA_MESAS)) {
                     sin_mesas_cerca=false;
-                }
-            }
-        }
+                }j++;
+            }i++;
+        }mesa_anterior++;
     }return sin_mesas_cerca;
 }
-void modificar_posicion(coordenada_t posicion_reemplazante, coordenada_t* posicion_original){
-    posicion_original->fil=posicion_reemplazante.fil;
-    posicion_original->col=posicion_reemplazante.col;
+/*
+*   Pre condiciones: -
+*   Post condiciones: Modifica la fila y la columna de la posicion a reemplazar con los de la posicion
+*                     reemplazante.
+*/
+void modificar_posicion(coordenada_t posicion_reemplazante, coordenada_t* posicion_a_remplazar){
+    posicion_a_remplazar->fil=posicion_reemplazante.fil;
+    posicion_a_remplazar->col=posicion_reemplazante.col;
 }
-
+/*
+*   Pre condiciones: -
+*   Post condiciones: Chequea si la posicion dada es valida y esta dentro del terreno, si es asi
+*                     devuelve un booleano con valor true, caso contrario devuelve el booleano con valor
+*                     false.
+*/
 bool chequeo_coordenada_valida(coordenada_t posicion){
     bool posicion_valida=false;
     if ((posicion.fil>=0 && posicion.fil<MAX_FILAS) && (posicion.col>=0 && posicion.col<MAX_COLUMNAS)){
         posicion_valida=true;
     }return posicion_valida;
-}
-
-bool validar_coordenada_mesa(mesa_t mesa){
-    bool es_valido=true;
-    coordenada_t posicion_mesa = *mesa.posicion;
-    int comensal=0;
-    while(es_valido && comensal < mesa.cantidad_comensales){
-        if ((posicion_mesa.fil<0 || posicion_mesa.fil>=MAX_FILAS) || (posicion_mesa.col<0 || posicion_mesa.col>=MAX_COLUMNAS))
-            es_valido=false;
-        comensal++;
-    }return es_valido;
 }
 /*
 * Pre condiciones: -
@@ -108,12 +169,12 @@ void inicializar_juego(juego_t *juego){
     juego->dinero=0;
     juego->movimientos=0;
     juego->cantidad_mesas=0;
-    juego->cantidad_herramientas=(CANTIDAD_TOTAL_MONEDAS + CANTIDAD_TOTAL_PATINES + UNICA_MOPA);
-    juego->cantidad_obstaculos=TOTAL_OBSTACULOS;
+    juego->cantidad_herramientas=0;
+    juego->cantidad_obstaculos=0;
     /* MESAS */
     while(juego->cantidad_mesas<(TOTAL_MESAS_INDIVIDUALES + TOTAL_MESAS_DE_CUATRO)){
         juego->mesas[juego->cantidad_mesas].pedido_tomado=false;
-        juego->mesas[juego->cantidad_mesas].paciencia=-1;
+        juego->mesas[juego->cantidad_mesas].paciencia=ENTERO_INVALIDO;
         if (juego->cantidad_mesas<TOTAL_MESAS_INDIVIDUALES){
             juego->mesas[juego->cantidad_mesas].cantidad_comensales=MIN_COMENSALES;
             juego->mesas[juego->cantidad_mesas].cantidad_lugares=MIN_COMENSALES;
@@ -126,19 +187,18 @@ void inicializar_juego(juego_t *juego){
     for(int a=0; a<juego->cantidad_mesas; a++){
 
         coordenada_t posicion;
-        posicion.fil=-1;
-        posicion.col=-1;
+        posicion.fil=ENTERO_INVALIDO;
+        posicion.col=ENTERO_INVALIDO;
         if((juego->mesas[a].cantidad_comensales) == MIN_COMENSALES){
             do{
-                posicion.fil = (rand() % 19);
-                posicion.col = (rand() % 19);
+                posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
+                posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                 modificar_posicion(posicion, juego->mesas[a].posicion);
-                // printf("Posicion de mesa de %i es %i|%i\n", *juego.mesas[a].cantidad_comensales, *juego.mesas[a].posicion->fil, *juego.mesas[a].posicion->col );
-            }while (!(validar_coordenada_mesa(juego->mesas[a])) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
+            }while (!(chequeo_coordenada_valida(*juego->mesas[a].posicion)) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
         }else if (juego->mesas[a].cantidad_comensales==MAX_COMENSALES){
             do{
-                    posicion.col = (rand() % 19);
-                    posicion.fil = (rand() % 19);
+                    posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
+                    posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                 for(int j=0; j < MAX_COMENSALES;j++){
                     if (j==1)
                         posicion.col++;
@@ -147,16 +207,15 @@ void inicializar_juego(juego_t *juego){
                     }else if (j==3)
                         posicion.col++;
                     modificar_posicion(posicion, &juego->mesas[a].posicion[j]);
-                    //printf("Posicion de mesa de %i es %i|%i\n", juego->mesas[a].cantidad_comensales, juego->mesas[a].posicion->fil, juego->mesas[a].posicion->col );
                 }
-            }while (!validar_coordenada_mesa(juego->mesas[a]) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
+            }while (!(chequeo_coordenada_valida(*juego->mesas[a].posicion)) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
         }
     }
     /* COCINA */
     do{
-        juego->cocina.posicion.fil= (rand() % 19);
-        juego->cocina.posicion.col= (rand() % 19);
-    } while(!chequeo_coordenada_valida(juego->cocina.posicion) || !coordenada_ocupada(juego, &juego->cocina.posicion));
+        juego->cocina.posicion.fil= (rand() % TOTAL_NUMEROS_ALEATORIOS);
+        juego->cocina.posicion.col= (rand() % TOTAL_NUMEROS_ALEATORIOS);
+    } while(!chequeo_coordenada_valida(juego->cocina.posicion) || !coordenada_no_ocupada(juego, &juego->cocina.posicion));
     /* LINGUINI */
     juego->mozo.tiene_mopa=false;
     juego->mozo.patines_puestos=false;
@@ -188,54 +247,72 @@ void inicializar_juego(juego_t *juego){
         }
     }
     do{
-        juego->mozo.posicion.fil=(rand() % 19);
-        juego->mozo.posicion.col=(rand() % 19);
-    } while(!coordenada_ocupada(juego, &juego->mozo.posicion));
+        juego->mozo.posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+        juego->mozo.posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+    } while(!coordenada_no_ocupada(juego, &juego->mozo.posicion));
     /* MOPA */
+    juego->herramientas[LUGAR_MOPA].tipo=MOPA;
     do{
-        juego->herramientas[LUGAR_MOPA].posicion.fil=(rand() % 19);
-        juego->herramientas[LUGAR_MOPA].posicion.col=(rand() % 19);
-    } while (!coordenada_ocupada(juego, &juego->herramientas[0].posicion));
+        juego->herramientas[LUGAR_MOPA].posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+        juego->herramientas[LUGAR_MOPA].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+    } while (!coordenada_no_ocupada(juego, &juego->herramientas[0].posicion));
+    juego->cantidad_herramientas++;
     /* MONEDAS */
-    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
-        juego->herramientas[moneda].tipo=MONEDA;
+    int cantidad_monedas=0;
+    while(cantidad_monedas<CANTIDAD_TOTAL_MONEDAS){
+        juego->herramientas[juego->cantidad_herramientas].tipo=MONEDA;
         do{
-            juego->herramientas[moneda].posicion.fil=(rand() % 19);
-            juego->herramientas[moneda].posicion.col=(rand() % 19);
-        } while (!coordenada_ocupada(juego, &juego->herramientas[moneda].posicion));
+            juego->herramientas[juego->cantidad_herramientas].posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+            juego->herramientas[juego->cantidad_herramientas].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+        } while (!coordenada_no_ocupada(juego, &juego->herramientas[juego->cantidad_herramientas].posicion));
+        cantidad_monedas++;
+        juego->cantidad_herramientas++;
     }
     /* PATINES */
-    for (int patin = PRIMER_LUGAR_PATINES; patin < juego->cantidad_herramientas; patin++){
-        juego->herramientas[patin].tipo=PATIN;
+    int cantidad_patines=0;
+    while(cantidad_patines<CANTIDAD_TOTAL_PATINES){
+        juego->herramientas[juego->cantidad_herramientas].tipo=PATIN;
         do{
-            juego->herramientas[patin].posicion.fil=(rand() % 19);
-            juego->herramientas[patin].posicion.col=(rand() % 19);
-        } while (!coordenada_ocupada(juego, &juego->herramientas[patin].posicion));    
+            juego->herramientas[juego->cantidad_herramientas].posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+            juego->herramientas[juego->cantidad_herramientas].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+        } while (!coordenada_no_ocupada(juego, &juego->herramientas[juego->cantidad_herramientas].posicion));
+        cantidad_patines++; 
+        juego->cantidad_herramientas++;   
     }
     /* CHARCOS */
-    for (int charco = 0; charco < CANTIDAD_CHARCOS; charco++){
-        juego->obstaculos[charco].tipo=CHARCO;
+    int cantidad_charcos=0;
+    while(cantidad_charcos<CANTIDAD_CHARCOS){
+        juego->obstaculos[cantidad_charcos].tipo=CHARCO;
         do{
-            juego->obstaculos[charco].posicion.fil=(rand() % 19);
-            juego->obstaculos[charco].posicion.col=(rand() % 19);
-        } while (!coordenada_ocupada(juego, &juego->obstaculos[charco].posicion));
-        
+            juego->obstaculos[cantidad_charcos].posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+            juego->obstaculos[cantidad_charcos].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
+        } while (!coordenada_no_ocupada(juego, &juego->obstaculos[cantidad_charcos].posicion));
+        cantidad_charcos++;
+        juego->cantidad_obstaculos++;
     }
-    mostrar_juego(*juego);
-    while (estado_juego(*juego)==0){
-        char accion=' ';
-        printf("HAZ UNA ACCION=>");
-        scanf(" %c", &accion);
-        while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
-            system("clear");
-            mostrar_juego(*juego);
-            printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN =>");
-            scanf(" %c", &accion);
+}
+void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
+        int tope_comensales=(TOTAL_MESAS_DE_CUATRO + TOTAL_MESAS_INDIVIDUALES);
+    for(int i=0; i < tope_comensales; i++)
+        if (juego.mesas[i].cantidad_comensales<=MIN_COMENSALES){
+            reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[0]);
+        }else if (juego.mesas[i].cantidad_comensales>=MAX_COMENSALES){
+            for (int j = 0; j < MAX_COMENSALES; j++){
+                reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
+            }
         }
-        system("clear");
-        realizar_jugada(juego,accion);
-        mostrar_juego(*juego);
+    reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
+    reemplazar_elemento(terreno, juego.herramientas[LUGAR_MOPA].tipo, juego.herramientas[LUGAR_MOPA].posicion);
+    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
+        reemplazar_elemento(terreno, juego.herramientas[moneda].tipo, juego.herramientas[moneda].posicion);
     }
+    for (int patin = PRIMER_LUGAR_PATINES; patin < juego.cantidad_herramientas; patin++){
+        reemplazar_elemento(terreno, juego.herramientas[patin].tipo, juego.herramientas[patin].posicion);
+    }
+    for (int charco = 0; charco < juego.cantidad_obstaculos; charco++){
+        reemplazar_elemento(terreno, juego.obstaculos[charco].tipo, juego.obstaculos[charco].posicion);
+    }
+    reemplazar_elemento(terreno, LINGUINI, juego.mozo.posicion);
 }
 /*
 * Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego ` y la acción
@@ -244,6 +321,14 @@ void inicializar_juego(juego_t *juego){
 * implementará el funcionamiento para mover al jugador y agarrar/soltar la mopa.
 */
 void realizar_jugada(juego_t *juego , char accion){
+
+    while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && 
+    accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
+        system("clear");
+        mostrar_juego(*juego);
+        printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN =>\n");
+        scanf(" %c", &accion);
+    }
     chequeo_coordenada_valida(juego->mozo.posicion);
     if (accion==ACCION_ABAJO && juego->mozo.posicion.fil!=(MAX_FILAS-1)){
         juego->mozo.posicion.fil++;
@@ -258,7 +343,6 @@ void realizar_jugada(juego_t *juego , char accion){
         if (mesa_en_el_camino(*juego, &juego->mozo.posicion)){
             juego->mozo.posicion.fil++;
             juego->movimientos--;
-
         }
     }else if (accion==ACCION_DERECHA && juego->mozo.posicion.col!=(MAX_COLUMNAS-1)){
         juego->mozo.posicion.col++;
@@ -284,7 +368,7 @@ void realizar_jugada(juego_t *juego , char accion){
             juego->mozo.tiene_mopa=true;
             juego->herramientas[LUGAR_MOPA].posicion.fil=-1;
             juego->herramientas[LUGAR_MOPA].posicion.col=-1;
-        }else if (juego->mozo.tiene_mopa && coordenada_ocupada(juego, &juego->mozo.posicion)){
+        }else if (juego->mozo.tiene_mopa && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
                 juego->mozo.tiene_mopa=false;
                 juego->herramientas[LUGAR_MOPA].posicion.fil=juego->mozo.posicion.fil;
                 juego->herramientas[LUGAR_MOPA].posicion.col=juego->mozo.posicion.col;
@@ -303,6 +387,11 @@ void realizar_jugada(juego_t *juego , char accion){
 * Se dará por perdido si se termina el día y no se llegó al monto.
 */
 int estado_juego(juego_t juego){
+    if (juego.movimientos==MAX_MOVIMIENTOS){
+        return -1;
+    }if (juego.dinero==DINERO_NECESARIO){
+        return 1;
+    }
     return 0;
 }
 /*
@@ -316,33 +405,9 @@ void mostrar_juego(juego_t juego){
             terreno[i][j]=VACIO;
         }   
     }
-
-    int tope_comensales=10;
-    for(int i=0; i < tope_comensales; i++)
-        if (juego.mesas[i].cantidad_comensales<=MIN_COMENSALES){
-            reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[0]);
-        }else if (juego.mesas[i].cantidad_comensales>=MAX_COMENSALES){
-            for (int j = 0; j < MAX_COMENSALES; j++){
-                reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
-            }
-        }
-    terreno[juego.cocina.posicion.fil][juego.cocina.posicion.col]=COCINA;
-    terreno[juego.herramientas[0].posicion.fil][juego.herramientas[0].posicion.col]=MOPA;
-    for (int moneda = 1; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
-        coordenada_t posicion_moneda=juego.herramientas[moneda].posicion;
-        terreno[posicion_moneda.fil][posicion_moneda.col]=juego.herramientas[moneda].tipo;
-    }
-    for (int patin = PRIMER_LUGAR_PATINES; patin < juego.cantidad_herramientas; patin++){
-        coordenada_t posicion_patin=juego.herramientas[patin].posicion;
-        terreno[posicion_patin.fil][posicion_patin.col]=juego.herramientas[patin].tipo;
-    }
-    for (int charco = 0; charco < juego.cantidad_obstaculos; charco++){
-        coordenada_t posicion_charco=juego.obstaculos[charco].posicion;
-        terreno[posicion_charco.fil][posicion_charco.col]=juego.obstaculos[charco].tipo;
-    }
-    terreno[juego.mozo.posicion.fil][juego.mozo.posicion.col]=LINGUINI;
-    
-    printf("|ACCIONES VALIDAS|\n|MOVERSE IZQUIERDA = 'A' | MOVERSE DERECHA = 'D' | MOVERSE ARRIBA = W | MOVERSE ABAJO = S |\n\n");
+    cambiar_elementos_del_terreno(terreno, juego);
+    printf("     ---|ACCIONES VALIDAS|---\n");
+    printf("|MOVERSE IZQUIERDA = 'A' | MOVERSE DERECHA = 'D' | MOVERSE ARRIBA = W | MOVERSE ABAJO = S | AGARRAR/SOLTAR MOPA = O|\n");
     for (int i = 0; i < 81; i++){
         printf("=");
     }
@@ -355,7 +420,7 @@ void mostrar_juego(juego_t juego){
             if (columna==(MAX_COLUMNAS-1)){
                 printf("|  ");
                 if ( fila%2==0){
-                    printf("[PEDIDO MESA N°%i-%i]\n", mesa+1, juego.mozo.pedidos[mesa].id_mesa);
+                    printf("[PEDIDO MESA N°%i-%i]\n", (mesa+1), juego.mozo.pedidos[mesa].id_mesa);
                     mesa++;
                 }else
                     printf("\n");
@@ -369,12 +434,9 @@ void mostrar_juego(juego_t juego){
     if (juego.mozo.tiene_mopa)
         mopa=MOPA;
     else
-        mopa=VACIO  ;
-
-    
-    printf("[CANTIDAD DE ACCIONES: - %i -] ", juego.movimientos);
+        mopa=VACIO;
+    printf("[CANTIDAD DE MOVIMIENTOS: - %i -] ", juego.movimientos);
     printf("[MOPA:- %c -] ", mopa);
     printf("[DINERO: - %i -] ",juego.dinero);
     printf("\n");
-    printf("%i", juego.cantidad_mesas);
 }
