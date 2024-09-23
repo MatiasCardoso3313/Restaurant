@@ -65,8 +65,8 @@ bool mesa_en_el_camino(juego_t juego, coordenada_t* posicion){
 *                     de juego, tambien establece que si tiene la misma direccion que con lo que se compara,
 *                     procede a no compararar las posiciones, ya que si fueran exactamente la misma posicion siempre
 *                     devolveria el booleano con valor falso. Luego si no hay elementos en la misma 
-*                     posicion devuelve un booleano con valor true, caso contrario devuelve el booleano 
-*                     con valor false.
+*                     posicion devuelve el valor true de la variable no_esta_ocupada, caso contrario 
+*                     devuelve el valor false.
 */
 bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
@@ -87,7 +87,7 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
             no_esta_ocupada=false;
     }
     int lugar_moneda = 0;
-    while((no_esta_ocupada==true) && (lugar_moneda<=juego->cantidad_herramientas)){
+    while(no_esta_ocupada && (lugar_moneda<=juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_moneda].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
@@ -95,7 +95,7 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
         }lugar_moneda++;   
     }
     int lugar_patin = 0;
-    while ((no_esta_ocupada==true) && (lugar_patin<=juego->cantidad_herramientas)){
+    while (no_esta_ocupada && (lugar_patin<=juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_patin].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
@@ -103,7 +103,7 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
         }lugar_patin++;
     }
     int lugar_charco = 0;
-    while ((no_esta_ocupada==true) && (lugar_charco<juego->cantidad_herramientas)){
+    while (no_esta_ocupada && (lugar_charco<juego->cantidad_herramientas)){
         if (&juego->obstaculos[lugar_charco].posicion!=posicion){
             coordenada_t posicion_obstaculo=juego->obstaculos[lugar_charco].posicion;
             if ((posicion->fil==posicion_obstaculo.fil) && (posicion->col==posicion_obstaculo.col)){
@@ -116,8 +116,8 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
 /*
 *   Pre condiciones: La variable numero de mesas debe ser valido y estan en el rango del vector de mesas
 *                    de juego.
-*   Post condiciones: Chequea que al rededor de la nueva mesa no haya otras mesas, si hay una mesa al rededo
-*                     devuelve un booleano con valor false, caso contrario devuelve el booleano. 
+*   Post condiciones: Chequea que al rededor de la nueva mesa no haya otras mesas, si hay una mesa al rededor
+*                     devuelve el valor false de la variable sin_mesas_cerca, caso contrario devuelve el valor true. 
 */
 bool validar_espacio_alrededor_de_mesas(juego_t juego, mesa_t nueva_mesa, int numero_de_mesas) {
     bool sin_mesas_cerca=true;
@@ -149,8 +149,8 @@ void modificar_posicion(coordenada_t posicion_reemplazante, coordenada_t* posici
 /*
 *   Pre condiciones: -
 *   Post condiciones: Chequea si la posicion dada es valida y esta dentro del terreno, si es asi
-*                     devuelve un booleano con valor true, caso contrario devuelve el booleano con valor
-*                     false.
+*                     devuelve el valor true de la variable posicion_valida, caso contrario devuelve 
+*                     el valor false.
 */
 bool chequeo_coordenada_valida(coordenada_t posicion){
     bool posicion_valida=false;
@@ -228,7 +228,7 @@ void inicializar_juego(juego_t *juego){
                 juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos++;
             }
             juego->mozo.pedidos[juego->mozo.cantidad_pedidos].id_mesa=juego->mesas[juego->mozo.cantidad_pedidos].cantidad_comensales;
-            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].tiempo_preparacion=-1;
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].tiempo_preparacion=ENTERO_INVALIDO;
             juego->mozo.cantidad_pedidos++;
         }
         while (juego->mozo.cantidad_bandeja<MAX_BANDEJA){
@@ -239,7 +239,7 @@ void inicializar_juego(juego_t *juego){
                 juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos++;
             }
             juego->mozo.bandeja[juego->mozo.cantidad_bandeja].id_mesa=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion=-1;
+            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion=ENTERO_INVALIDO;
             juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
             juego->mozo.cantidad_bandeja++;
         }
@@ -289,15 +289,17 @@ void inicializar_juego(juego_t *juego){
         juego->cantidad_obstaculos++;
     }
 }
+/*
+*   Pre condiciones: El terreno y juego debe estar previamente inicializado.
+*   Post condiciones: Cambia el caracter del terreno en la posicion de cada elemento
+*                     que tiene el juego.
+*
+*/
 void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
-        int tope_comensales=(TOTAL_MESAS_DE_CUATRO + TOTAL_MESAS_INDIVIDUALES);
-    for(int i=0; i < tope_comensales; i++)
-        if (juego.mesas[i].cantidad_comensales<=MIN_COMENSALES){
-            reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[0]);
-        }else if (juego.mesas[i].cantidad_comensales>=MAX_COMENSALES){
-            for (int j = 0; j < MAX_COMENSALES; j++){
-                reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
-            }
+    printf("%i",juego.cantidad_mesas);
+    for(int i=0; i < juego.cantidad_mesas; i++)
+        for(int j=0; j < juego.mesas[i].cantidad_comensales; j++){
+            reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
         }
     reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
     reemplazar_elemento(terreno, juego.herramientas[LUGAR_MOPA].tipo, juego.herramientas[LUGAR_MOPA].posicion);
@@ -364,8 +366,8 @@ void realizar_jugada(juego_t *juego , char accion){
         }else if (!juego->mozo.tiene_mopa && (posicion_mopa.fil==posicion_mozo.fil && posicion_mopa.col==posicion_mozo.col)){
             printf("     ---RECOGISTE LA MOPA---\n");
             juego->mozo.tiene_mopa=true;
-            juego->herramientas[LUGAR_MOPA].posicion.fil=-1;
-            juego->herramientas[LUGAR_MOPA].posicion.col=-1;
+            juego->herramientas[LUGAR_MOPA].posicion.fil=ENTERO_INVALIDO;
+            juego->herramientas[LUGAR_MOPA].posicion.col=ENTERO_INVALIDO;
         }else if (juego->mozo.tiene_mopa && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
                 juego->mozo.tiene_mopa=false;
                 juego->herramientas[LUGAR_MOPA].posicion.fil=juego->mozo.posicion.fil;
