@@ -24,7 +24,11 @@ const char VACIO=' ';
 /* POSICION EN VECTORES */
 const int LUGAR_MOPA= 0;
 const int PRIMER_LUGAR_MONEDAS= 1;
+const int ULTIMO_LUGAR_MONEDAS= 8;
 const int PRIMER_LUGAR_PATINES= 9;
+const int ULTIMO_LUGAR_PATINES= 13;
+const int PRIMER_LUGAR_CHARCO= 0;
+const int ULTIMO_LUGAR_CHARCO= 4;
 /* CANTIDAD Y TOTALIDAD DE ELEMENTOS */
 const int MIN_COMENSALES= 1;
 const int TOTAL_MESAS_INDIVIDUALES= 6;
@@ -92,24 +96,24 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
         if ((posicion->fil==juego->herramientas->posicion.fil) && (posicion->col==juego->herramientas->posicion.col))
             no_esta_ocupada=false;
     }
-    int lugar_moneda = 0;
-    while(no_esta_ocupada && (lugar_moneda<=juego->cantidad_herramientas)){
+    int lugar_moneda = PRIMER_LUGAR_MONEDAS;
+    while((no_esta_ocupada) && (lugar_moneda<=ULTIMO_LUGAR_MONEDAS)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_moneda].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
             no_esta_ocupada=false;
         }lugar_moneda++;   
     }
-    int lugar_patin = 0;
-    while (no_esta_ocupada && (lugar_patin<=juego->cantidad_herramientas)){
+    int lugar_patin = PRIMER_LUGAR_PATINES;
+    while ((no_esta_ocupada) && (lugar_patin<ULTIMO_LUGAR_PATINES)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_patin].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
                 no_esta_ocupada=false;
         }lugar_patin++;
     }
-    int lugar_charco = 0;
-    while (no_esta_ocupada && (lugar_charco<juego->cantidad_herramientas)){
+    int lugar_charco = PRIMER_LUGAR_CHARCO;
+    while ((no_esta_ocupada) && (lugar_charco<ULTIMO_LUGAR_CHARCO)){
         if (&juego->obstaculos[lugar_charco].posicion!=posicion){
             coordenada_t posicion_obstaculo=juego->obstaculos[lugar_charco].posicion;
             if ((posicion->fil==posicion_obstaculo.fil) && (posicion->col==posicion_obstaculo.col)){
