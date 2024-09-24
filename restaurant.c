@@ -2,10 +2,16 @@
 #include<stdlib.h>
 #include "restaurant.h"
 
+/* ESTADO DE JUEGO */
+const int JUEGO_EN_CURSO=0;
+const int JUEGO_PERDIDO=-1;
+const int JUEGO_GANADO=1;
 /* CONVENCIONES */
 const int ENTERO_INVALIDO=-1;
 const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
+const int MAX_MOVIMIENTOS = -1;
+const int DINERO_NECESARIO = -1;
 /* ELEMENTOS VALIDOS */
 const char MOPA='O';
 const char MONEDA='M';
@@ -386,7 +392,12 @@ void realizar_jugada(juego_t *juego , char accion){
 * Se dará por perdido si se termina el día y no se llegó al monto.
 */
 int estado_juego(juego_t juego){
-    return 0;
+    if (juego.movimientos==MAX_MOVIMIENTOS){
+        return JUEGO_PERDIDO;
+    }if (juego.dinero==DINERO_NECESARIO){
+        return JUEGO_GANADO;
+    }
+    return JUEGO_EN_CURSO;
 }
 /*
 * Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego `.
