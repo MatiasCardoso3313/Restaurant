@@ -296,11 +296,10 @@ void inicializar_juego(juego_t *juego){
 *
 */
 void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
-    printf("%i",juego.cantidad_mesas);
-    for(int i=0; i < juego.cantidad_mesas; i++)
-        for(int j=0; j < juego.mesas[i].cantidad_comensales; j++){
+    for(int i=0; i < juego.cantidad_mesas; i++){
+        for(int j=0; j < juego.mesas[i].cantidad_comensales; j++)
             reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
-        }
+    }
     reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
     reemplazar_elemento(terreno, juego.herramientas[LUGAR_MOPA].tipo, juego.herramientas[LUGAR_MOPA].posicion);
     for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
