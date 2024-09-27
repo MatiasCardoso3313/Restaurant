@@ -7,12 +7,13 @@ const int JUEGO_EN_CURSO=0;
 const int JUEGO_PERDIDO=-1;
 const int JUEGO_GANADO=1;
 /* CONVENCIONES */
+const int LARGO_DEL_TERRENO_IMPRESO_EN_PANTALLA = 81;
 const int ENTERO_INVALIDO=-1;
 const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
 const int SIN_COMENSALES=0;
 const int MAX_MOVIMIENTOS = 200;
-const int DINERO_NECESARIO = 0;
+const int DINERO_NECESARIO = 150000;
 /* ELEMENTOS VALIDOS */
 const char MOPA='O';
 const char MONEDA='M';
@@ -34,7 +35,6 @@ const int ULTIMO_LUGAR_CHARCO= 4;
 const int MIN_COMENSALES= 1;
 const int TOTAL_MESAS_INDIVIDUALES= 6;
 const int TOTAL_MESAS_DE_CUATRO= 4;
-const int TOTAL_OBSTACULOS= 5;
 const int CANTIDAD_CHARCOS= 5;
 const int CANTIDAD_TOTAL_MONEDAS= 8;
 const int CANTIDAD_TOTAL_PATINES= 5;
@@ -311,12 +311,11 @@ void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_
 */
 void realizar_jugada(juego_t *juego , char accion){
 
-    while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && 
-    accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
-        system("clear");
+    while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
         mostrar_juego(*juego);
-        printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN =>\n");
+        printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN ⟹ ");
         scanf(" %c", &accion);
+        system("clear");
     }
     chequeo_coordenada_valida(juego->mozo.posicion);
     if (accion==ACCION_ABAJO && juego->mozo.posicion.fil!=(MAX_FILAS-1)){
@@ -378,7 +377,7 @@ void realizar_jugada(juego_t *juego , char accion){
 int estado_juego(juego_t juego){
     if (juego.movimientos==MAX_MOVIMIENTOS){
         return JUEGO_PERDIDO;
-    }if (juego.dinero==DINERO_NECESARIO){
+    }if (juego.dinero>=DINERO_NECESARIO){
         return JUEGO_GANADO;
     }
     return JUEGO_EN_CURSO;
@@ -396,8 +395,8 @@ void mostrar_juego(juego_t juego){
     }
     cambiar_elementos_del_terreno(terreno, juego);
     printf("     ---|ACCIONES VALIDAS|---\n");
-    printf("|MOVERSE IZQUIERDA = 'A' | MOVERSE DERECHA = 'D' | MOVERSE ARRIBA = W | MOVERSE ABAJO = S | AGARRAR/SOLTAR MOPA = O|\n");
-    for (int i = 0; i < 81; i++){
+    printf("|MOVERSE IZQUIERDA ⟹ 'A' | MOVERSE DERECHA ⟹ 'D' | MOVERSE ARRIBA ⟹ W | MOVERSE ABAJO ⟹ S | AGARRAR/SOLTAR MOPA ⟹ O|\n");
+    for (int i = 0; i < LARGO_DEL_TERRENO_IMPRESO_EN_PANTALLA; i++){
         printf("=");
     }
     printf("\n");
@@ -415,7 +414,7 @@ void mostrar_juego(juego_t juego){
                     printf("\n");
             }
         }   
-    }for (int i = 0; i < 81; i++){
+    }for (int i = 0; i < LARGO_DEL_TERRENO_IMPRESO_EN_PANTALLA; i++){
         printf("=");
     }
     printf("\n");
@@ -426,6 +425,6 @@ void mostrar_juego(juego_t juego){
         mopa=VACIO;
     printf("[CANTIDAD DE MOVIMIENTOS: - %i -] ", juego.movimientos);
     printf("[MOPA:- %c -] ", mopa);
-    printf("[DINERO: - %i -] ",juego.dinero);
+    printf("[DINERO: - $%i -] ",juego.dinero);
     printf("\n");
 }
