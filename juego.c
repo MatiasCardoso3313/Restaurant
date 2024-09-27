@@ -24,10 +24,12 @@ int main(){
         mostrar_juego(juego);
     }if (estado_juego(juego) == JUEGO_GANADO_MAIN){
         system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|G A N A S T E|-\n\n\n\n\n\n\n\n\n\n\n\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|G A N A S T E|-\n");
+        printf("               - se ha llegado al objetivo de dinero -\n\n\n\n\n\n\n\n\n\n\n");
     }else if(estado_juego(juego) == JUEGO_PERDIDO_MAIN){
         system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|P E R D I S T E|-\n\n\n\n\n\n\n\n\n\n\n\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|P E R D I S T E|-\n");
+        printf("      - se ha terminado el dia -\n\n\n\n\n\n\n\n\n\n\n");
 
     }
     return 0;

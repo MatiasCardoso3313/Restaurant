@@ -10,8 +10,9 @@ const int JUEGO_GANADO=1;
 const int ENTERO_INVALIDO=-1;
 const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
-const int MAX_MOVIMIENTOS = -1;
-const int DINERO_NECESARIO = -1;
+const int SIN_COMENSALES=0;
+const int MAX_MOVIMIENTOS = 200;
+const int DINERO_NECESARIO = 0;
 /* ELEMENTOS VALIDOS */
 const char MOPA='O';
 const char MONEDA='M';
@@ -62,7 +63,7 @@ bool mesa_en_el_camino(juego_t juego, coordenada_t* posicion){
     int i=0;
     while((i<juego.cantidad_mesas) && (!hay_mesa_en_camino)){
         int j=0;
-        while(j<juego.mesas[i].cantidad_comensales && (!hay_mesa_en_camino)){
+        while(j<juego.mesas[i].cantidad_lugares && (!hay_mesa_en_camino)){
             if (juego.mesas[i].posicion[j].fil==posicion->fil && juego.mesas[i].posicion[j].col==posicion->col) {
                 hay_mesa_en_camino=true;
             }j++;
@@ -135,10 +136,10 @@ bool validar_espacio_alrededor_de_mesas(juego_t juego, mesa_t nueva_mesa, int nu
     while(mesa_anterior<numero_de_mesas && sin_mesas_cerca){
         mesa_t mesa = juego.mesas[mesa_anterior];
         int i=0;
-        while(i < mesa.cantidad_comensales && sin_mesas_cerca){
+        while(i < mesa.cantidad_lugares && sin_mesas_cerca){
             coordenada_t posicion = mesa.posicion[i];
             int j=0;
-            while(j<nueva_mesa.cantidad_comensales && sin_mesas_cerca) {
+            while(j<nueva_mesa.cantidad_lugares && sin_mesas_cerca) {
                 coordenada_t nueva_posicion = nueva_mesa.posicion[j];
                 if ((abs(posicion.fil - nueva_posicion.fil) <= DISTANCIA_MINIMA_MESAS) && (abs(posicion.col - nueva_posicion.col) <= DISTANCIA_MINIMA_MESAS)) {
                     sin_mesas_cerca=false;
@@ -184,10 +185,10 @@ void inicializar_juego(juego_t *juego){
         juego->mesas[juego->cantidad_mesas].pedido_tomado=false;
         juego->mesas[juego->cantidad_mesas].paciencia=ENTERO_INVALIDO;
         if (juego->cantidad_mesas<TOTAL_MESAS_INDIVIDUALES){
-            juego->mesas[juego->cantidad_mesas].cantidad_comensales=MIN_COMENSALES;
+            juego->mesas[juego->cantidad_mesas].cantidad_comensales=SIN_COMENSALES;
             juego->mesas[juego->cantidad_mesas].cantidad_lugares=MIN_COMENSALES;
         }else{
-            juego->mesas[juego->cantidad_mesas].cantidad_comensales=MAX_COMENSALES;
+            juego->mesas[juego->cantidad_mesas].cantidad_comensales=SIN_COMENSALES;
             juego->mesas[juego->cantidad_mesas].cantidad_lugares=MAX_COMENSALES;
         }
         juego->cantidad_mesas++;
@@ -197,13 +198,13 @@ void inicializar_juego(juego_t *juego){
         coordenada_t posicion;
         posicion.fil=ENTERO_INVALIDO;
         posicion.col=ENTERO_INVALIDO;
-        if((juego->mesas[a].cantidad_comensales) == MIN_COMENSALES){
+        if((juego->mesas[a].cantidad_lugares) == MIN_COMENSALES){
             do{
                 posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                 posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                 modificar_posicion(posicion, juego->mesas[a].posicion);
             }while (!(chequeo_coordenada_valida(*juego->mesas[a].posicion)) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
-        }else if (juego->mesas[a].cantidad_comensales==MAX_COMENSALES){
+        }else if (juego->mesas[a].cantidad_lugares==MAX_COMENSALES){
             do{
                     posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                     posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
@@ -230,29 +231,8 @@ void inicializar_juego(juego_t *juego){
     juego->mozo.cantidad_pedidos=0;
     juego->mozo.cantidad_bandeja=0;
     for (int i = 0; i < juego->cantidad_mesas; i++){
-        while (juego->mozo.cantidad_pedidos<MAX_PEDIDOS){
-            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos=0;
-            while(juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos<MAX_PLATOS){
-                int numero_plato=juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos;
-                juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[numero_plato]=VACIO;
-                juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos++;
-            }
-            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].id_mesa=juego->mesas[juego->mozo.cantidad_pedidos].cantidad_comensales;
-            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].tiempo_preparacion=ENTERO_INVALIDO;
-            juego->mozo.cantidad_pedidos++;
-        }
-        while (juego->mozo.cantidad_bandeja<MAX_BANDEJA){
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=0;
-            while(juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos<MAX_BANDEJA){
-                int numero_plato=juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos;
-                juego->mozo.bandeja[juego->mozo.cantidad_bandeja].platos[numero_plato]=VACIO;
-                juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos++;
-            }
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].id_mesa=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion=ENTERO_INVALIDO;
-            juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=juego->mesas[juego->mozo.cantidad_bandeja].cantidad_comensales;
-            juego->mozo.cantidad_bandeja++;
-        }
+        juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos=0;
+        juego->mozo.bandeja[juego->mozo.cantidad_bandeja].cantidad_platos=0;
     }
     do{
         juego->mozo.posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
@@ -307,7 +287,7 @@ void inicializar_juego(juego_t *juego){
 */
 void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
     for(int i=0; i < juego.cantidad_mesas; i++){
-        for(int j=0; j < juego.mesas[i].cantidad_comensales; j++)
+        for(int j=0; j < juego.mesas[i].cantidad_lugares; j++)
             reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
     }
     reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
