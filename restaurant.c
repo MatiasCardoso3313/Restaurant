@@ -106,7 +106,7 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
         }lugar_moneda++;   
     }
     int lugar_patin = PRIMER_LUGAR_PATINES;
-    while ((no_esta_ocupada) && (lugar_patin<ULTIMO_LUGAR_PATINES)){
+    while ((no_esta_ocupada) && (lugar_patin<=ULTIMO_LUGAR_PATINES)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             coordenada_t posicion_herramienta=juego->herramientas[lugar_patin].posicion;
             if ((posicion->fil==posicion_herramienta.fil) && (posicion->col==posicion_herramienta.col))
@@ -225,7 +225,6 @@ void inicializar_juego(juego_t *juego){
         juego->cocina.posicion.fil= (rand() % TOTAL_NUMEROS_ALEATORIOS);
         juego->cocina.posicion.col= (rand() % TOTAL_NUMEROS_ALEATORIOS);
     } while(!chequeo_coordenada_valida(juego->cocina.posicion) || !coordenada_no_ocupada(juego, &juego->cocina.posicion));
-    printf("fil %i | col %i -> La cocina tiene la posicion\n", juego->cocina.posicion.fil, juego->cocina.posicion.col);
     /* LINGUINI */
     juego->mozo.tiene_mopa=false;
     juego->mozo.patines_puestos=false;
@@ -240,7 +239,6 @@ void inicializar_juego(juego_t *juego){
         juego->mozo.posicion.fil=(rand() % TOTAL_NUMEROS_ALEATORIOS);
         juego->mozo.posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
     } while(!coordenada_no_ocupada(juego, &juego->mozo.posicion));
-    printf("fil %i | col %i -> El mozo tiene la posicion\n", juego->mozo.posicion.fil, juego->mozo.posicion.col);
     /* MOPA */
     juego->herramientas[LUGAR_MOPA].tipo=MOPA;
     do{
@@ -248,7 +246,6 @@ void inicializar_juego(juego_t *juego){
         juego->herramientas[LUGAR_MOPA].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
     } while (!coordenada_no_ocupada(juego, &juego->herramientas[0].posicion));
     juego->cantidad_herramientas++;
-    printf("fil %i | col %i -> La mopa tiene la posicion:\n", juego->herramientas[LUGAR_MOPA].posicion.fil, juego->herramientas[LUGAR_MOPA].posicion.col);
     /* MONEDAS */
     int cantidad_monedas=0;
     while(cantidad_monedas<CANTIDAD_TOTAL_MONEDAS){
@@ -258,7 +255,6 @@ void inicializar_juego(juego_t *juego){
             juego->herramientas[juego->cantidad_herramientas].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
         } while (!coordenada_no_ocupada(juego, &juego->herramientas[juego->cantidad_herramientas].posicion));
         cantidad_monedas++;
-        printf("fil %i | col %i -> La moneda %i tiene la posicion\n",juego->herramientas[juego->cantidad_herramientas].posicion.fil, juego->herramientas[juego->cantidad_herramientas].posicion.col, cantidad_monedas);
         juego->cantidad_herramientas++;
     }
     /* PATINES */
@@ -270,7 +266,6 @@ void inicializar_juego(juego_t *juego){
             juego->herramientas[juego->cantidad_herramientas].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
         } while (!coordenada_no_ocupada(juego, &juego->herramientas[juego->cantidad_herramientas].posicion));
         cantidad_patines++; 
-        printf("fil %i | col %i -> El patin %i tiene la posicion\n",juego->herramientas[juego->cantidad_herramientas].posicion.fil, juego->herramientas[juego->cantidad_herramientas].posicion.col, cantidad_patines);
         juego->cantidad_herramientas++;   
     }
     /* CHARCOS */
@@ -282,7 +277,6 @@ void inicializar_juego(juego_t *juego){
             juego->obstaculos[cantidad_charcos].posicion.col=(rand() % TOTAL_NUMEROS_ALEATORIOS);
         } while (!coordenada_no_ocupada(juego, &juego->obstaculos[cantidad_charcos].posicion));
         cantidad_charcos++;
-        printf("fil %i | col %i -> El charco %i tiene la posicion\n",juego->obstaculos[juego->cantidad_obstaculos].posicion.fil, juego->obstaculos[juego->cantidad_obstaculos].posicion.col, cantidad_charcos);
         juego->cantidad_obstaculos++;
     }
 }

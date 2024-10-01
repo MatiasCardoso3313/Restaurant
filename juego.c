@@ -22,7 +22,6 @@ int main(){
         system("clear");
         realizar_jugada(&juego,accion);
         mostrar_juego(juego);
-        inicializar_juego(&juego);
     }if (estado_juego(juego) == JUEGO_GANADO_MAIN){
         system("clear");
         printf("\n\n\n\n\n\n\n\n\n\n\n\n               -|G A N A S T E|-\n");
