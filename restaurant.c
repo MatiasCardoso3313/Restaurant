@@ -77,6 +77,7 @@ bool posicion_sin_mesa(juego_t juego, coordenada_t* posicion){
         }i++;
     }return no_hay_mesa;
 }
+
 /*
 *   Pre condiciones: Juego debe tener elementos inicializados con sus respectivas posiciones validas.
 *   Post condiciones: Compara la posicion ingresada por referencia con cada posicion de cada elemento
@@ -170,25 +171,14 @@ bool chequeo_coordenada_valida(coordenada_t posicion){
 *   Post condiciones: Cambia los valores de fila y columna de posicion con numeros aleatorios
 *                     hasta que la posicion sea única.
 *
- */
+*/
 void cambiar_a_cordenadas_desocupadas(juego_t* juego, coordenada_t* posicion){
     do{
         posicion->fil= (rand() % TOTAL_NUMEROS_ALEATORIOS);
         posicion->col= (rand() % TOTAL_NUMEROS_ALEATORIOS);
     } while (!coordenada_no_ocupada(juego, posicion));
 }
-/*
-* Pre condiciones: -
-* Post condiciones: Inicializará el juego , cargando toda la información inicial de Linguini , las
-* mesas , las herramientas y los obstáculos.
-*/
-void inicializar_juego(juego_t *juego){
-    juego->dinero=0;
-    juego->movimientos=0;
-    juego->cantidad_mesas=0;
-    juego->cantidad_herramientas=0;
-    juego->cantidad_obstaculos=0;
-    /* MESAS */
+void inicializar_campos_mesas(juego_t* juego){
     while(juego->cantidad_mesas<(TOTAL_MESAS_INDIVIDUALES + TOTAL_MESAS_DE_CUATRO)){
         juego->mesas[juego->cantidad_mesas].pedido_tomado=false;
         juego->mesas[juego->cantidad_mesas].paciencia=0;
@@ -201,6 +191,8 @@ void inicializar_juego(juego_t *juego){
         }
         juego->cantidad_mesas++;
     }
+}
+void inicializar_posiciones_mesas(juego_t* juego){
     for(int a=0; a<juego->cantidad_mesas; a++){
         coordenada_t posicion;
         posicion.fil=ENTERO_INVALIDO;
@@ -213,8 +205,8 @@ void inicializar_juego(juego_t *juego){
             }while (!validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
         }else if (juego->mesas[a].cantidad_lugares==MAX_COMENSALES){
             do{
-                    posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
-                    posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
+                posicion.col = (rand() % TOTAL_NUMEROS_ALEATORIOS);
+                posicion.fil = (rand() % TOTAL_NUMEROS_ALEATORIOS);
                 for(int j=0; j < MAX_COMENSALES;j++){
                     if (j==1)
                         posicion.col++;
@@ -227,9 +219,11 @@ void inicializar_juego(juego_t *juego){
             }while (!(chequeo_coordenada_valida(*juego->mesas[a].posicion)) || !validar_espacio_alrededor_de_mesas(*juego, juego->mesas[a], a));
         }
     }
-    /* COCINA */
+}
+void inicializar_posicion_cocina(juego_t* juego){
     cambiar_a_cordenadas_desocupadas(juego, &juego->cocina.posicion);
-    /* LINGUINI */
+}
+void inicializar_campos_mozo(juego_t* juego){
     juego->mozo.tiene_mopa=false;
     juego->mozo.patines_puestos=false;
     juego->mozo.cantidad_patines=0;
@@ -239,12 +233,16 @@ void inicializar_juego(juego_t *juego){
         juego->mozo.pedidos[i].cantidad_platos=0;
         juego->mozo.bandeja[i].cantidad_platos=0;
     }
+}
+void inicializar_posicion_mozo(juego_t* juego){
     cambiar_a_cordenadas_desocupadas(juego, &juego->mozo.posicion);
-    /* MOPA */
+}
+void inicializar_mopa(juego_t* juego){
     juego->herramientas[LUGAR_MOPA].tipo=MOPA;
     cambiar_a_cordenadas_desocupadas(juego, &juego->herramientas[LUGAR_MOPA].posicion);
     juego->cantidad_herramientas++;
-    /* MONEDAS */
+}
+void inicializar_monedas(juego_t* juego){
     int cantidad_monedas=0;
     while(cantidad_monedas<CANTIDAD_TOTAL_MONEDAS){
         juego->herramientas[juego->cantidad_herramientas].tipo=MONEDA;
@@ -252,7 +250,8 @@ void inicializar_juego(juego_t *juego){
         cantidad_monedas++;
         juego->cantidad_herramientas++;
     }
-    /* PATINES */
+}
+void inicializar_patines(juego_t* juego){
     int cantidad_patines=0;
     while(cantidad_patines<CANTIDAD_TOTAL_PATINES){
         juego->herramientas[juego->cantidad_herramientas].tipo=PATIN;
@@ -260,7 +259,8 @@ void inicializar_juego(juego_t *juego){
         cantidad_patines++; 
         juego->cantidad_herramientas++;   
     }
-    /* CHARCOS */
+}
+void inicializar_charcos(juego_t* juego){
     int cantidad_charcos=0;
     while(cantidad_charcos<CANTIDAD_CHARCOS){
         juego->obstaculos[cantidad_charcos].tipo=CHARCO;
@@ -268,6 +268,27 @@ void inicializar_juego(juego_t *juego){
         cantidad_charcos++;
         juego->cantidad_obstaculos++;
     }
+}
+/*
+* Pre condiciones: -
+* Post condiciones: Inicializará el juego , cargando toda la información inicial de Linguini , las
+* mesas , las herramientas y los obstáculos.
+*/
+void inicializar_juego(juego_t *juego){
+    juego->dinero=0;
+    juego->movimientos=0;
+    juego->cantidad_mesas=0;
+    juego->cantidad_herramientas=0;
+    juego->cantidad_obstaculos=0;
+    inicializar_campos_mesas(juego);
+    inicializar_posiciones_mesas(juego);
+    inicializar_posicion_cocina(juego);
+    inicializar_campos_mozo(juego);
+    inicializar_posicion_mozo(juego);
+    inicializar_mopa(juego);
+    inicializar_monedas(juego);
+    inicializar_patines(juego);
+    inicializar_charcos(juego);
 }
 /*
 *   Pre condiciones: El terreno y juego debe estar previamente inicializado.
@@ -294,6 +315,68 @@ void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_
     }
     reemplazar_elemento(terreno, LINGUINI, juego.mozo.posicion);
 }
+void comprobar_dezplazamiento_valido(juego_t* juego, char accion){
+    if (!posicion_sin_mesa(*juego, &juego->mozo.posicion) && accion==ACCION_ARRIBA){
+        juego->mozo.posicion.fil--;
+        juego->movimientos--;
+    }
+    if (!posicion_sin_mesa(*juego, &juego->mozo.posicion) && accion==ACCION_ABAJO){
+        juego->mozo.posicion.fil++;
+        juego->movimientos--;
+    }
+    if (!posicion_sin_mesa(*juego, &juego->mozo.posicion) && accion==ACCION_IZQUIERDA){
+        juego->mozo.posicion.col++;
+        juego->movimientos--;
+    }
+    if (!posicion_sin_mesa(*juego, &juego->mozo.posicion) && accion==ACCION_DERECHA){
+        juego->mozo.posicion.col--;
+        juego->movimientos--;
+    }
+}
+void movimiento_hacia_arriba(juego_t* juego){
+    juego->mozo.posicion.fil++;
+    juego->movimientos++;
+    comprobar_dezplazamiento_valido(juego, ACCION_ARRIBA);
+}
+void movimiento_hacia_abajo(juego_t* juego){
+    juego->mozo.posicion.fil--;
+    juego->movimientos++;
+    comprobar_dezplazamiento_valido(juego, ACCION_ABAJO);
+}
+void movimiento_hacia_derecha(juego_t* juego){
+    juego->mozo.posicion.col++;
+    juego->movimientos++;
+    comprobar_dezplazamiento_valido(juego, ACCION_DERECHA);
+}
+void movimiento_hacia_izquierda(juego_t* juego){
+    juego->mozo.posicion.col--;
+    juego->movimientos++;
+    comprobar_dezplazamiento_valido(juego, ACCION_IZQUIERDA);
+}
+void estado_mopa_recogida(juego_t* juego){
+    juego->mozo.tiene_mopa=true;
+    juego->herramientas[LUGAR_MOPA].posicion.fil=ENTERO_INVALIDO;
+    juego->herramientas[LUGAR_MOPA].posicion.col=ENTERO_INVALIDO;
+}
+void estado_mopa_soltada(juego_t* juego){
+    juego->mozo.tiene_mopa=false;
+    juego->herramientas[LUGAR_MOPA].posicion.fil=juego->mozo.posicion.fil;
+    juego->herramientas[LUGAR_MOPA].posicion.col=juego->mozo.posicion.col;
+}
+void accion_agarrar_o_soltar_mopa(juego_t* juego){
+    coordenada_t posicion_mopa=juego->herramientas[LUGAR_MOPA].posicion;
+    coordenada_t posicion_mozo=juego->mozo.posicion;
+    if (!juego->mozo.tiene_mopa && (posicion_mopa.fil!=posicion_mozo.fil || posicion_mopa.col!=posicion_mozo.col)){
+        printf("     ---¡¡¡NO PUEDES RECOGER LA MOPA, NO TE ENCUENTRAS ENCIMA DE ELLA!!!---\n");
+    }else if (!juego->mozo.tiene_mopa && (posicion_mopa.fil==posicion_mozo.fil && posicion_mopa.col==posicion_mozo.col)){
+        printf("     ---RECOGISTE LA MOPA---\n");
+        estado_mopa_recogida(juego);
+    }else if (juego->mozo.tiene_mopa && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
+        printf("     ---SOLTASTE LA MOPA EN TU POSICION ACTUAL---\n");
+        estado_mopa_soltada(juego);
+    }else
+        printf("     ---¡¡¡NO PUEDES SOLTAR LA MOPA EN ESTA POSICION!!!---\n");  
+}
 /*
 * Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego ` y la acción
 * debe ser válida.
@@ -301,59 +384,17 @@ void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_
 * implementará el funcionamiento para mover al jugador y agarrar/soltar la mopa.
 */
 void realizar_jugada(juego_t *juego , char accion){
-
-    while ((accion!= ACCION_ABAJO && accion!= ACCION_ARRIBA && accion!=ACCION_DERECHA && accion!=ACCION_IZQUIERDA && accion!=AGARRA_O_SOLTAR_MOPA)){
-        mostrar_juego(*juego);
-        printf("NO SE HA HECHO UNA ACCIÓN VALIDA, VUELVE A INTRODUCIR UNA ACCIÓN ⟹ ");
-        scanf(" %c", &accion);
-        system("clear");
-    }
     chequeo_coordenada_valida(juego->mozo.posicion);
     if (accion==ACCION_ABAJO && juego->mozo.posicion.fil!=(MAX_FILAS-1)){
-        juego->mozo.posicion.fil++;
-        juego->movimientos++;
-        if (!posicion_sin_mesa(*juego, &juego->mozo.posicion)){
-            juego->mozo.posicion.fil--;
-            juego->movimientos--;
-        }
+        movimiento_hacia_arriba(juego);
     }else if (accion==ACCION_ARRIBA && juego->mozo.posicion.fil!=0){
-        juego->mozo.posicion.fil--;
-        juego->movimientos++;
-        if (!posicion_sin_mesa(*juego, &juego->mozo.posicion)){
-            juego->mozo.posicion.fil++;
-            juego->movimientos--;
-        }
+        movimiento_hacia_abajo(juego);
     }else if (accion==ACCION_DERECHA && juego->mozo.posicion.col!=(MAX_COLUMNAS-1)){
-        juego->mozo.posicion.col++;
-        juego->movimientos++;
-        if (!posicion_sin_mesa(*juego, &juego->mozo.posicion)){
-            juego->mozo.posicion.col--;
-            juego->movimientos--;
-        }
+        movimiento_hacia_derecha(juego);
     }else if (accion==ACCION_IZQUIERDA && juego->mozo.posicion.col!=0){
-        juego->mozo.posicion.col--;
-        juego->movimientos++;
-        if (!posicion_sin_mesa(*juego, &juego->mozo.posicion)){
-            juego->mozo.posicion.col++;
-            juego->movimientos--;
-        }
+        movimiento_hacia_izquierda(juego);
     }else if (accion==AGARRA_O_SOLTAR_MOPA){
-        coordenada_t posicion_mopa=juego->herramientas[LUGAR_MOPA].posicion;
-        coordenada_t posicion_mozo=juego->mozo.posicion;
-        if (!juego->mozo.tiene_mopa && (posicion_mopa.fil!=posicion_mozo.fil || posicion_mopa.col!=posicion_mozo.col)){
-            printf("     ---¡¡¡NO PUEDES RECOGER LA MOPA, NO TE ENCUENTRAS ENCIMA DE ELLA!!!---\n");
-        }else if (!juego->mozo.tiene_mopa && (posicion_mopa.fil==posicion_mozo.fil && posicion_mopa.col==posicion_mozo.col)){
-            printf("     ---RECOGISTE LA MOPA---\n");
-            juego->mozo.tiene_mopa=true;
-            juego->herramientas[LUGAR_MOPA].posicion.fil=ENTERO_INVALIDO;
-            juego->herramientas[LUGAR_MOPA].posicion.col=ENTERO_INVALIDO;
-        }else if (juego->mozo.tiene_mopa && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
-                juego->mozo.tiene_mopa=false;
-                juego->herramientas[LUGAR_MOPA].posicion.fil=juego->mozo.posicion.fil;
-                juego->herramientas[LUGAR_MOPA].posicion.col=juego->mozo.posicion.col;
-                printf("     ---SOLTASTE LA MOPA EN TU POSICION ACTUAL---\n");
-        }else
-            printf("     ---¡¡¡NO PUEDES SOLTAR LA MOPA EN ESTA POSICION!!!---\n");  
+        accion_agarrar_o_soltar_mopa(juego);
     }
 }
 /*
@@ -385,7 +426,7 @@ void mostrar_juego(juego_t juego){
         }   
     }
     cambiar_elementos_del_terreno(terreno, juego);
-    printf("     ---|ACCIONES VALIDAS|---\n");
+    printf("\t\t\t---|ACCIONES VALIDAS|---\n");
     printf("|MOVERSE IZQUIERDA ⟹ 'A' | MOVERSE DERECHA ⟹ 'D' | MOVERSE ARRIBA ⟹ W | MOVERSE ABAJO ⟹ S | AGARRAR/SOLTAR MOPA ⟹ O|\n");
     for (int i = 0; i < LARGO_DEL_TERRENO_IMPRESO_EN_PANTALLA; i++){
         printf("=");
