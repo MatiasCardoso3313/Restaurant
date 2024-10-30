@@ -44,6 +44,51 @@ const char ACCION_IZQUIERDA=  'A';
 const char ACCION_ARRIBA=  'W';
 const char ACCION_ABAJO=  'S';
 const char AGARRA_O_SOLTAR_MOPA=  'O';
+
+
+
+bool elemento_esta(objeto_t objetos[], int tope , char elemento_buscado){
+	int i =0;
+	int esta = false;
+	while((!esta ) && (i < tope ) ) {
+		if ( objetos[i].tipo== elemento_buscado){
+			esta = true;   
+        }
+		i++;
+	}
+	return esta;
+}	
+
+int primera_pos_elemento(objeto_t objetos[], int tope , char elemento_buscado){
+	int i =0;
+    int pos_elemento=ENTERO_INVALIDO;
+	bool esta = elemento_esta(objetos, tope, elemento_buscado);
+	while((i<tope) && pos_elemento==ENTERO_INVALIDO && esta){
+		if ( objetos[i].tipo==elemento_buscado){
+			pos_elemento=i;
+        }
+		i++;
+	}
+    if (pos_elemento==ENTERO_INVALIDO){
+        return ENTERO_INVALIDO;
+    }
+	return pos_elemento;
+}	
+
+
+
+void eliminar_elemento( objeto_t objetos[] , char elemento_a_eliminar , int* tope ) {
+	bool esta = elemento_esta(objetos, *tope, elemento_a_eliminar);
+    int pos=-1;
+    if(esta)
+	    pos=primera_pos_elemento(objetos, *tope, elemento_a_eliminar);
+	if(esta){
+		for (int i = pos ; i < (*tope)-1 ; i++ )
+		objetos[i].tipo= objetos[i+1].tipo;
+		*tope-=1;
+	}
+}
+
 /*
 *   Pre condiciones: El terreno debe estar inicializado con elementos válidos, y el elemento que recibe debe 
 *                   ser un ELEMENTO VÁLIDO.
@@ -80,35 +125,35 @@ bool posicion_sin_mesa(juego_t juego, coordenada_t* posicion){
 /*
 *   Pre condiciones: El campo de posición del campo cocina de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
-*   Post condiciones: Devuelve true si la dirección de posición y la dirección de la posición de la cocina son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*   Post condiciones: Devuelve true si la dirección de posición y la dirección de la posición de la cocina son 
+*                     distintas, y si los valores tambien son iguales. Caso contrario devuelve false.
 */
-bool coordenada_libre_de_cocina(juego_t* juego, coordenada_t* posicion){
+bool coordenada_ocupada_con_cocina(juego_t* juego, coordenada_t* posicion){
     return ((&juego->cocina.posicion!=posicion) && (!posiciones_distintas(*posicion, juego->cocina.posicion)));
 }
 /*
 *   Pre condiciones: El campo de posición del campo mozo de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
 *   Post condiciones: Devuelve true si la dirección de posición y la dirección de la posicion del mozo son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*                     los valores tambien son iguales. Caso contrario devuelve false.
 */
-bool coordenada_libre_de_mozo(juego_t* juego, coordenada_t* posicion){
+bool coordenada_ocupada_con_mozo(juego_t* juego, coordenada_t* posicion){
     return ((&juego->mozo.posicion!=posicion) && (!posiciones_distintas(*posicion, juego->mozo.posicion)));
 }
 /*
 *   Pre condiciones: El campo de posición del campo herramientas[LUGAR_MOPA] de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
 *   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de la mopa son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*                     los valores tambien son iguales. Caso contrario devuelve false.
 */
-bool coordenada_libre_de_mopa(juego_t* juego, coordenada_t* posicion){
+bool coordenada_ocupada_con_mopa(juego_t* juego, coordenada_t* posicion){
     return ((&juego->herramientas[LUGAR_MOPA].posicion!=posicion) && (!posiciones_distintas(*posicion, juego->herramientas[LUGAR_MOPA].posicion)));
 }
 /*
 *   Pre condiciones: El campo de posición de los campos de las monedas de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
-*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de las monedas son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de las monedas son 
+*                     distintas, y si los valores tambien son distintos. Caso contrario devuelve false.
 */
 bool coordenada_libre_de_moneda(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
@@ -123,8 +168,8 @@ bool coordenada_libre_de_moneda(juego_t* juego, coordenada_t* posicion){
 /*
 *   Pre condiciones: El campo de posición de los campos de los patines de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
-*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de los patines son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de los patines son 
+*                     distintas, y si los valores tambien son distintos. Caso contrario devuelve false.
 */
 bool coordenada_libre_de_patin(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
@@ -139,8 +184,8 @@ bool coordenada_libre_de_patin(juego_t* juego, coordenada_t* posicion){
 /*
 *   Pre condiciones: El campo de posición de los campos de los charcos de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
-*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de los charcos son distintas, y si
-*                     los valores tambien son distintos. Caso contrario devuelve false.
+*   Post condiciones: Devuelve true si la dirección de posición y la dirección de posición de los charcos son 
+*                     distintas, y si los valores tambien son distintos. Caso contrario devuelve false.
 */
 bool coordenada_libre_de_charco(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
@@ -159,22 +204,20 @@ bool coordenada_libre_de_charco(juego_t* juego, coordenada_t* posicion){
 *                     el valor true.
 */
 bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
-    if(!posicion_sin_mesa(*juego, posicion))
-        return false;
-    if (coordenada_libre_de_cocina(juego, posicion))
-        return false;
-    if (coordenada_libre_de_mozo(juego, posicion))
-        return false;
-    if (coordenada_libre_de_mopa(juego, posicion))
-        return false;
-    if (!coordenada_libre_de_moneda(juego, posicion))
-        return false;
-    if (!coordenada_libre_de_patin(juego, posicion))
-        return false;
-    if (!coordenada_libre_de_charco(juego, posicion))
+    if(!(posicion_sin_mesa(*juego, posicion)) || (coordenada_ocupada_con_cocina(juego, posicion)) ||(coordenada_ocupada_con_mozo(juego, posicion)) || (coordenada_ocupada_con_mopa(juego, posicion)) || !(coordenada_libre_de_moneda(juego, posicion)) || (!coordenada_libre_de_patin(juego, posicion)) || !(coordenada_libre_de_charco(juego, posicion)))
         return false;
     return true;
 }
+
+void insertar_elemento_final(juego_t* juego, objeto_t objetos[], int *tope, char elemento_a_insertar) {
+    objetos[*tope].tipo= elemento_a_insertar;
+    if (elemento_a_insertar==MOPA && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
+        objetos[*tope].posicion=juego->mozo.posicion;
+    }
+    (*tope)++;
+}
+
+
 /*
 *   Pre condiciones: La variable numero de mesas debe ser valido y estar en el rango del vector de mesas
 *                    de juego.
@@ -188,7 +231,7 @@ bool validar_espacio_alrededor_de_mesas(juego_t juego, mesa_t nueva_mesa, int nu
         mesa_t mesa = juego.mesas[mesa_anterior];
         int i=0;
         while(i < mesa.cantidad_lugares && sin_mesas_cerca){
-            coordenada_t posicion = mesa.posicion[i];
+            coordenada_t posicion = mesa.posicion[i];   
             int j=0;
             while(j<nueva_mesa.cantidad_lugares && sin_mesas_cerca) {
                 coordenada_t nueva_posicion = nueva_mesa.posicion[j];
@@ -430,15 +473,40 @@ void comprobar_dezplazamiento_valido(juego_t* juego, char accion){
         juego->movimientos--;
     }
 }
+
+void llegada_comensales(juego_t* juego){
+    int cant_comensales_entrantes=(rand() % 3) + 1;
+    int acontador=0;
+    int bcontador=6;
+    bool mesa_encontrada=false;
+    while(!mesa_encontrada && acontador<juego->cantidad_mesas && bcontador<juego->cantidad_mesas){
+        if (cant_comensales_entrantes==MIN_COMENSALES && juego->mesas[acontador].cantidad_comensales==SIN_COMENSALES){
+            juego->mesas[acontador].cantidad_comensales=cant_comensales_entrantes;
+            juego->mesas[acontador].pedido_tomado=false;
+            juego->mesas[acontador].paciencia=(rand() % 100) + 100;
+            mesa_encontrada=true;
+        }else if (cant_comensales_entrantes>MIN_COMENSALES && juego->mesas[bcontador].cantidad_comensales==SIN_COMENSALES){
+            juego->mesas[bcontador].cantidad_comensales=cant_comensales_entrantes;
+            juego->mesas[bcontador].pedido_tomado=false;
+            juego->mesas[bcontador].paciencia=(rand() % 100) + 100;
+            mesa_encontrada=true;
+        }acontador++;bcontador++;
+    }
+}
+
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
 *   Post condiciones: Dezplaza hacia arriba al mozo y suma un movimiento, luego comprueba que sea un
 *                     dezplazamiento valido.
 */
 void movimiento_hacia_arriba(juego_t* juego){
+    int aux=juego->movimientos;
     juego->mozo.posicion.fil--;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_ARRIBA);
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+        llegada_comensales(juego);
+    }
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -446,9 +514,13 @@ void movimiento_hacia_arriba(juego_t* juego){
 *                     dezplazamiento valido.
 */
 void movimiento_hacia_abajo(juego_t* juego){
+    int aux=juego->movimientos;
     juego->mozo.posicion.fil++;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_ABAJO);
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+        llegada_comensales(juego);
+    }
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -456,9 +528,13 @@ void movimiento_hacia_abajo(juego_t* juego){
 *                     dezplazamiento valido.
 */
 void movimiento_hacia_derecha(juego_t* juego){
+    int aux=juego->movimientos;
     juego->mozo.posicion.col++;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_DERECHA);
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+        llegada_comensales(juego);
+    }
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -466,9 +542,13 @@ void movimiento_hacia_derecha(juego_t* juego){
 *                     dezplazamiento valido.
 */
 void movimiento_hacia_izquierda(juego_t* juego){
+    int aux=juego->movimientos;
     juego->mozo.posicion.col--;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_IZQUIERDA);
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+        llegada_comensales(juego);
+    }
 }
 /*
 *   Pre condiciones: -
@@ -477,8 +557,7 @@ void movimiento_hacia_izquierda(juego_t* juego){
 */
 void estado_mopa_recogida(juego_t* juego){
     juego->mozo.tiene_mopa=true;
-    juego->herramientas[LUGAR_MOPA].posicion.fil=ENTERO_INVALIDO;
-    juego->herramientas[LUGAR_MOPA].posicion.col=ENTERO_INVALIDO;
+    eliminar_elemento(juego->herramientas, MOPA, &juego->cantidad_herramientas);
 }
 /*
 *   Pre condiciones: -
@@ -488,8 +567,7 @@ void estado_mopa_recogida(juego_t* juego){
 */
 void estado_mopa_soltada(juego_t* juego){
     juego->mozo.tiene_mopa=false;
-    juego->herramientas[LUGAR_MOPA].posicion.fil=juego->mozo.posicion.fil;
-    juego->herramientas[LUGAR_MOPA].posicion.col=juego->mozo.posicion.col;
+    insertar_elemento_final(juego, juego->herramientas, &juego->cantidad_herramientas, MOPA);
 }
 /*
 *   Pre condiciones: juego debe estar inicializado previamente con 'inicializar_juego', a su vez las poisiciones de la mopa
