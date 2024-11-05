@@ -2,6 +2,15 @@
 #include<stdlib.h>
 #include "restaurant.h"
 
+#define REINICIO_COLOR "\033[0m"
+#define ROJO_COLOR "\033[31m"
+#define VERDE_COLOR "\033[32m"
+#define AMARILLO_COLOR "\033[33m"
+#define AZUL_COLOR "\033[34m"
+#define MAGENTA_COLOR "\033[35m"
+#define CYAN_COLOR "\033[36m"
+#define TEXTO_NEGRITA "\033[1m"
+
 /* ESTADO DE JUEGO */
 const int JUEGO_EN_CURSO=0;
 const int JUEGO_PERDIDO=-1;
@@ -13,6 +22,11 @@ const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
 const int SIN_COMENSALES=0;
 const int MAX_MOVIMIENTOS = 200;
+const int SIN_PEDIDOS=0;
+const int SIN_PLATOS=0;
+const int DINERO_DE_MONEDAS=1000;
+const int INDIVIDUAL_VALOR_MESA=5000;
+const int CUATRO_VALOR_MESA=20000;
 const int DINERO_NECESARIO = 150000;
 /* ELEMENTOS VALIDOS */
 const char MOPA='O';
@@ -23,8 +37,9 @@ const char CHARCO='H';
 const char LINGUINI='L';
 const char COCINA='C';
 const char VACIO=' ';
+const char LUGAR_OCUPADO='X';
 /* POSICION EN VECTORES */
-const int LUGAR_MOPA= 0;
+const int LUGAR_INICIAL_MOPA= 0;
 const int PRIMER_LUGAR_MONEDAS= 1;
 const int ULTIMO_LUGAR_MONEDAS= 8;
 const int PRIMER_LUGAR_PATINES= 9;
@@ -44,8 +59,21 @@ const char ACCION_IZQUIERDA=  'A';
 const char ACCION_ARRIBA=  'W';
 const char ACCION_ABAJO=  'S';
 const char AGARRA_O_SOLTAR_MOPA=  'O';
+const char TOMAR_PEDIDO='T';
+const char PONERSE_PATINES='P';
 
-
+const char MILANESA_NAPO='M';
+const int MILANESA_NAPO_REP=1;
+const int TIMER_MILANESA_NAPO=30;
+const char HAMBURGUESA='H';
+const int HAMBURGUESA_REP=2;
+const int TIMER_HAMBURGUESA=15;
+const char PARRILLA='P';
+const int PARRILLA_REP=3;
+const int TIMER_PARRILLA=20;
+const char RATATOUILLE='R';
+const int RATATOUILLE_REP=4;
+const int TIMER_RATATOUILLE=25;
 
 bool elemento_esta(objeto_t objetos[], int tope , char elemento_buscado){
 	int i =0;
@@ -75,7 +103,13 @@ int primera_pos_elemento(objeto_t objetos[], int tope , char elemento_buscado){
 	return pos_elemento;
 }	
 
-
+void eliminar_elemento_especifico(objeto_t objetos[], int pos_elemento, int* tope){
+    for (int i = pos_elemento; i < *tope; i++){
+        objetos[i].tipo=objetos[i+1].tipo;
+        objetos[i].posicion=objetos[i+1].posicion;
+    }*tope-=1;
+    
+}
 
 void eliminar_elemento( objeto_t objetos[] , char elemento_a_eliminar , int* tope ) {
 	bool esta = elemento_esta(objetos, *tope, elemento_a_eliminar);
@@ -83,10 +117,44 @@ void eliminar_elemento( objeto_t objetos[] , char elemento_a_eliminar , int* top
     if(esta)
 	    pos=primera_pos_elemento(objetos, *tope, elemento_a_eliminar);
 	if(esta){
-		for (int i = pos ; i < (*tope)-1 ; i++ )
-		objetos[i].tipo= objetos[i+1].tipo;
-		*tope-=1;
+		for (int i = pos ; i < (*tope)-1 ; i++ ){
+            objetos[i].tipo= objetos[i+1].tipo;
+            objetos[i].posicion= objetos[i+1].posicion;
+        }
+        *tope-=1;
 	}
+}
+void eliminar_pedido( pedido_t pedidos[] ,int pos_pedido, int* tope ) {
+	for (int i = pos_pedido; i < *tope; i++){
+        pedidos[i] = pedidos[i+1];
+    }
+    *tope-=1;
+}
+
+int cantidad_elemento(objeto_t objetos[], char tipo_elemento, int tope_objetos){
+    int cant_elemento=0;
+    for (int i = 0; i < tope_objetos; i++){
+        if (objetos[i].tipo==tipo_elemento)
+            cant_elemento++;
+    }
+    return cant_elemento;
+}
+// int cantidad_monedas(juego_t juego){
+//     int cantidad_monedas=0;
+//     for (int i = 0; i < juego.cantidad_herramientas; i++){
+//         if (juego.herramientas[i].tipo==MONEDA)
+//             cantidad_monedas++;
+//     }
+//         return cantidad_monedas;
+// }
+
+int cantidad_patines(juego_t juego){
+    int cantidad_patines=0;
+    for (int i = 0; i < juego.cantidad_herramientas; i++){
+        if (juego.herramientas[i].tipo==PATIN)
+            cantidad_patines++;
+    }
+        return cantidad_patines;
 }
 
 /*
@@ -147,8 +215,13 @@ bool coordenada_ocupada_con_mozo(juego_t* juego, coordenada_t* posicion){
 *                     los valores tambien son iguales. Caso contrario devuelve false.
 */
 bool coordenada_ocupada_con_mopa(juego_t* juego, coordenada_t* posicion){
-    return ((&juego->herramientas[LUGAR_MOPA].posicion!=posicion) && (!posiciones_distintas(*posicion, juego->herramientas[LUGAR_MOPA].posicion)));
+    return ((&juego->herramientas[primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MOPA)].posicion!=posicion) && (!posiciones_distintas(*posicion, juego->herramientas[primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MOPA)].posicion)));
 }
+
+bool pos_vector_valida(int pos, int tope){
+    return pos>=0 && pos<tope;
+}
+
 /*
 *   Pre condiciones: El campo de posición de los campos de las monedas de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
@@ -157,8 +230,14 @@ bool coordenada_ocupada_con_mopa(juego_t* juego, coordenada_t* posicion){
 */
 bool coordenada_libre_de_moneda(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
-    int lugar_moneda = PRIMER_LUGAR_MONEDAS;
-    while((no_esta_ocupada) && (lugar_moneda<=ULTIMO_LUGAR_MONEDAS)){
+    int lugar_moneda;
+    int cant_monedas=cantidad_elemento(juego->herramientas, MONEDA, juego->cantidad_herramientas);
+    if (elemento_esta(juego->herramientas, juego->cantidad_herramientas, MONEDA))
+        lugar_moneda = primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MONEDA);
+    else
+        return no_esta_ocupada;
+
+    while((no_esta_ocupada) && (lugar_moneda<(lugar_moneda+cant_monedas)) && pos_vector_valida(lugar_moneda, juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             no_esta_ocupada=posiciones_distintas(*posicion, juego->herramientas[lugar_moneda].posicion);
         }lugar_moneda++;   
@@ -173,8 +252,9 @@ bool coordenada_libre_de_moneda(juego_t* juego, coordenada_t* posicion){
 */
 bool coordenada_libre_de_patin(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
-    int lugar_patin = PRIMER_LUGAR_PATINES;
-    while ((no_esta_ocupada) && (lugar_patin<=ULTIMO_LUGAR_PATINES)){
+    int lugar_patin = primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, PATIN);
+    int cant_patines=cantidad_elemento(juego->herramientas, PATIN, juego->cantidad_herramientas);
+    while ((no_esta_ocupada) && (lugar_patin<=cant_patines)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             no_esta_ocupada=posiciones_distintas(*posicion, juego->herramientas[lugar_patin].posicion);
         }lugar_patin++;
@@ -324,6 +404,12 @@ void inicializar_posiciones_mesas(juego_t* juego){
         }
     }
 }
+
+void inicializar_campos_cocina(juego_t* juego){
+    juego->cocina.cantidad_preparacion=0;
+    juego->cocina.cantidad_listos=0;
+}
+
 /*
 *   Pre condiciones: -
 *   Post condiciones: Asigna a la cocina una posición. 
@@ -359,8 +445,8 @@ void inicializar_posicion_mozo(juego_t* juego){
 *                     y aumenta la cantidad de herramientas en 1.
 */
 void inicializar_mopa(juego_t* juego){
-    juego->herramientas[LUGAR_MOPA].tipo=MOPA;
-    cambiar_a_cordenadas_desocupadas(juego, &juego->herramientas[LUGAR_MOPA].posicion);
+    juego->herramientas[LUGAR_INICIAL_MOPA].tipo=MOPA;
+    cambiar_a_cordenadas_desocupadas(juego, &juego->herramientas[LUGAR_INICIAL_MOPA].posicion);
     juego->cantidad_herramientas++;
 }
 /*
@@ -418,6 +504,7 @@ void inicializar_juego(juego_t *juego){
     juego->cantidad_obstaculos=0;
     inicializar_campos_mesas(juego);
     inicializar_posiciones_mesas(juego);
+    inicializar_campos_cocina(juego);
     inicializar_posicion_cocina(juego);
     inicializar_campos_mozo(juego);
     inicializar_posicion_mozo(juego);
@@ -434,15 +521,23 @@ void inicializar_juego(juego_t *juego){
 void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
     for(int i=0; i < juego.cantidad_mesas; i++){
         for(int j=0; j < juego.mesas[i].cantidad_lugares; j++){
-            reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
+            if (juego.mesas[i].cantidad_comensales>0 && j<juego.mesas[i].cantidad_comensales)
+                reemplazar_elemento(terreno, LUGAR_OCUPADO, juego.mesas[i].posicion[j]);
+            else
+                reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
         }
     };
     reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
-    reemplazar_elemento(terreno, juego.herramientas[LUGAR_MOPA].tipo, juego.herramientas[LUGAR_MOPA].posicion);
-    for (int moneda = PRIMER_LUGAR_MONEDAS; moneda <= CANTIDAD_TOTAL_MONEDAS; moneda++){
+    if(!juego.mozo.tiene_mopa)
+        reemplazar_elemento(terreno, juego.herramientas[primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MOPA)].tipo, juego.herramientas[primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MOPA)].posicion);
+    int primer_lugar_moneda=primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MONEDA);
+    int cant_monedas=cantidad_elemento(juego.herramientas, MONEDA, juego.cantidad_herramientas);
+    for (int moneda = primer_lugar_moneda; moneda <( primer_lugar_moneda+cant_monedas); moneda++){
         reemplazar_elemento(terreno, juego.herramientas[moneda].tipo, juego.herramientas[moneda].posicion);
     }
-    for (int patin = PRIMER_LUGAR_PATINES; patin < juego.cantidad_herramientas; patin++){
+    int primer_lugar_patines=primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, PATIN);
+    int cant_patines=cantidad_elemento(juego.herramientas, PATIN, juego.cantidad_herramientas);
+    for (int patin = primer_lugar_patines; patin < (primer_lugar_patines+cant_patines); patin++){
         reemplazar_elemento(terreno, juego.herramientas[patin].tipo, juego.herramientas[patin].posicion);
     }
     for (int charco = 0; charco < juego.cantidad_obstaculos; charco++){
@@ -474,25 +569,290 @@ void comprobar_dezplazamiento_valido(juego_t* juego, char accion){
     }
 }
 
+bool un_comensal_y_mesa_sin_comensales(juego_t juego, int cant_comensales_entrantes, int pos_mesa){
+    return(cant_comensales_entrantes==MIN_COMENSALES && juego.mesas[pos_mesa].cantidad_comensales==SIN_COMENSALES);
+}
+
+bool mas_de_un_comensal_y_mesa_sin_comensales(juego_t juego, int cant_comensales_entrantes, int pos_mesa){
+    return (cant_comensales_entrantes>MIN_COMENSALES && juego.mesas[pos_mesa].cantidad_comensales==SIN_COMENSALES);
+}
+
+void asignar_comensales_mesa(juego_t* juego, int pos_mesa, int cant_comensales_entrantes){
+    juego->mesas[pos_mesa].cantidad_comensales=cant_comensales_entrantes;
+    juego->mesas[pos_mesa].pedido_tomado=false;
+    juego->mesas[pos_mesa].paciencia=(rand() % 100) + 100;
+}
+
 void llegada_comensales(juego_t* juego){
-    int cant_comensales_entrantes=(rand() % 3) + 1;
+    int cant_comensales_entrantes=(rand() % 4) + 1;
     int acontador=0;
     int bcontador=6;
     bool mesa_encontrada=false;
     while(!mesa_encontrada && acontador<juego->cantidad_mesas && bcontador<juego->cantidad_mesas){
-        if (cant_comensales_entrantes==MIN_COMENSALES && juego->mesas[acontador].cantidad_comensales==SIN_COMENSALES){
-            juego->mesas[acontador].cantidad_comensales=cant_comensales_entrantes;
-            juego->mesas[acontador].pedido_tomado=false;
-            juego->mesas[acontador].paciencia=(rand() % 100) + 100;
+        if (un_comensal_y_mesa_sin_comensales(*juego, cant_comensales_entrantes, acontador)){
+            asignar_comensales_mesa(juego, acontador, cant_comensales_entrantes);
             mesa_encontrada=true;
-        }else if (cant_comensales_entrantes>MIN_COMENSALES && juego->mesas[bcontador].cantidad_comensales==SIN_COMENSALES){
-            juego->mesas[bcontador].cantidad_comensales=cant_comensales_entrantes;
-            juego->mesas[bcontador].pedido_tomado=false;
-            juego->mesas[bcontador].paciencia=(rand() % 100) + 100;
+        }else if (mas_de_un_comensal_y_mesa_sin_comensales(*juego, cant_comensales_entrantes, bcontador)){
+            asignar_comensales_mesa(juego, bcontador, cant_comensales_entrantes);
             mesa_encontrada=true;
         }acontador++;bcontador++;
     }
 }
+
+void platos_preparacion_asignar_memoria(juego_t* juego, int tamanio){
+    juego->cocina.platos_preparacion=(pedido_t*)malloc((size_t)((size_t)(tamanio)*sizeof(pedido_t)));
+    if (juego->cocina.platos_preparacion==NULL){
+        printf(ROJO_COLOR"ERROR AL ASIGNAR MEMORIA (PLATOS_PREPARACION)"TEXTO_NEGRITA);
+        free(juego->cocina.platos_preparacion);
+    }
+}
+void platos_preparacion_redimensionar(juego_t* juego, int tamanio){
+    pedido_t* repuesto_pedido=NULL;
+    repuesto_pedido=(pedido_t*)realloc(juego->cocina.platos_preparacion, (size_t)((size_t)tamanio*sizeof(pedido_t)));
+    if (repuesto_pedido==NULL){
+        printf(ROJO_COLOR"ERROR EN MEMORIA (REDIMENSION )"TEXTO_NEGRITA);
+        free(juego->cocina.platos_preparacion);
+        juego->cocina.platos_preparacion=NULL;
+    }else{
+        juego->cocina.platos_preparacion=repuesto_pedido;
+    }
+}
+void platos_listos_asignar_memoria(juego_t* juego, int tamanio){
+    juego->cocina.platos_listos=(pedido_t*)malloc((size_t)((size_t)(tamanio)*sizeof(pedido_t)));
+    if (juego->cocina.platos_listos==NULL){
+        printf(ROJO_COLOR"ERROR AL ASIGNAR MEMORIA (PLATOS_PREPARACION)"TEXTO_NEGRITA);
+        free(juego->cocina.platos_listos);
+        juego->cocina.platos_listos=NULL;
+    }
+}
+void platos_listos_redimensionar(juego_t* juego, int tamanio){
+    pedido_t* repuesto_pedido=NULL;
+    repuesto_pedido=(pedido_t*)realloc(juego->cocina.platos_listos, (size_t)((size_t)tamanio*sizeof(pedido_t)));
+    if (repuesto_pedido==NULL){
+        printf(ROJO_COLOR"ERROR EN MEMORIA (REDIMENSION )"TEXTO_NEGRITA);
+        free(juego->cocina.platos_listos);
+    }else{
+        juego->cocina.platos_listos=repuesto_pedido;
+    }
+}
+
+bool mozo_encima_cocina(juego_t juego){
+    coordenada_t mozo_pos=juego.mozo.posicion;
+    coordenada_t cocina_pos=juego.cocina.posicion;
+    return((mozo_pos.fil==cocina_pos.fil) && (mozo_pos.col==cocina_pos.col));
+}
+
+bool mozo_con_pedidos(int cantidad_pedidos){
+    return (cantidad_pedidos>SIN_PEDIDOS);
+}
+
+void preparacion_asignar_o_redimensionar_memoria(juego_t* juego){
+    if (juego->cocina.cantidad_preparacion>0){
+        platos_preparacion_redimensionar(juego, juego->mozo.cantidad_pedidos+juego->cocina.cantidad_preparacion);
+    }else{
+        platos_preparacion_asignar_memoria(juego, juego->mozo.cantidad_pedidos);
+    }
+}
+
+void colocar_pedidos_en_cocina(juego_t* juego){
+    int platos_a_prepararse=juego->cocina.cantidad_preparacion + juego->mozo.cantidad_pedidos;
+    while (juego->cocina.cantidad_preparacion<(platos_a_prepararse)){
+        juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion]=juego->mozo.pedidos[0];
+        eliminar_pedido(juego->mozo.pedidos, 0, &juego->mozo.cantidad_pedidos);
+        juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion].tiempo_preparacion+=juego->movimientos;
+        printf("TIEMPO_PREP: %i", juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion].tiempo_preparacion);
+        juego->cocina.cantidad_preparacion++;
+    }
+    juego->mozo.cantidad_pedidos=0;
+}
+
+void ingresar_pedidos_a_cocina_para_preparar(juego_t* juego){   
+    preparacion_asignar_o_redimensionar_memoria(juego);
+    colocar_pedidos_en_cocina(juego);
+}
+
+int cantidad_pedidos_listos_en_cocina(juego_t juego){
+    int pedidos_listos=0;
+    for(int i=0; i<juego.cocina.cantidad_preparacion; i++){
+        if ((juego.movimientos>=juego.cocina.platos_preparacion[i].tiempo_preparacion))
+            pedidos_listos++;
+    }return pedidos_listos;
+}
+
+bool platos_listos_vacio(int cant_platos_listos){
+    return (cant_platos_listos==SIN_PLATOS);
+}
+
+void listos_asignar_o_redimensionar_memoria(juego_t* juego){
+    if (platos_listos_vacio(juego->cocina.cantidad_listos))
+        platos_listos_asignar_memoria(juego, cantidad_pedidos_listos_en_cocina(*juego));
+    else
+        platos_listos_redimensionar(juego, juego->cocina.cantidad_listos+cantidad_pedidos_listos_en_cocina(*juego));
+}
+
+
+bool hay_pedidos_listos(juego_t juego){
+    return (cantidad_pedidos_listos_en_cocina(juego)>0);
+}
+
+bool mozo_con_espacio_bandeja(int cant_bandeja){
+    return(cant_bandeja<MAX_BANDEJA);
+}
+
+void mover_platos(juego_t* juego, int* pedidos_listos){
+    int contador=0;
+    while(juego->cocina.cantidad_preparacion>SIN_PLATOS && *pedidos_listos<cantidad_pedidos_listos_en_cocina(*juego) && contador<cantidad_pedidos_listos_en_cocina(*juego)){
+        if (juego->movimientos>=juego->cocina.platos_preparacion->tiempo_preparacion){
+            juego->cocina.platos_listos[*pedidos_listos]=*juego->cocina.platos_preparacion;
+            printf("IDMESA %i", juego->cocina.platos_preparacion->id_mesa);
+            eliminar_pedido(juego->cocina.platos_preparacion, 0, &juego->cocina.cantidad_preparacion);
+            *pedidos_listos+=1;
+            contador++;
+        }else
+            contador++;
+    }
+}
+
+void actualizar_platos_preparacion(juego_t* juego, int pedidos_listos){
+    if (juego->cocina.cantidad_preparacion>0){
+        platos_preparacion_redimensionar(juego, juego->cocina.cantidad_preparacion);
+    }else if (juego->cocina.cantidad_preparacion==0){
+        free(juego->cocina.platos_preparacion);
+    }
+}
+
+void mover_platos_listos_en_preparacion_a_listos(juego_t* juego){ 
+    int pedidos_listos=0;
+    mover_platos(juego, &pedidos_listos);
+    juego->cocina.cantidad_listos+=pedidos_listos;
+    actualizar_platos_preparacion(juego, pedidos_listos);
+}
+
+void recoger_pedidos_listos(juego_t* juego){
+    while (mozo_con_espacio_bandeja(juego->mozo.cantidad_bandeja) && !platos_listos_vacio(juego->cocina.cantidad_listos)){
+        juego->mozo.bandeja[juego->mozo.cantidad_bandeja]=*juego->cocina.platos_listos;
+        printf("Agarro plato listo %i", juego->cocina.platos_listos->tiempo_preparacion);
+        eliminar_pedido(juego->cocina.platos_listos, 0, &juego->cocina.cantidad_listos);
+        printf("Plato listo AGARRADO %i", juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion);
+        juego->mozo.cantidad_bandeja++;
+    }
+}
+
+void interaccion_mozo_con_cocina(juego_t* juego){
+    if(mozo_con_pedidos(juego->mozo.cantidad_pedidos))
+        ingresar_pedidos_a_cocina_para_preparar(juego);
+    if (hay_pedidos_listos(*juego))
+        listos_asignar_o_redimensionar_memoria(juego);
+    if (mozo_con_espacio_bandeja(juego->mozo.cantidad_bandeja) && hay_pedidos_listos(*juego)){
+        mover_platos_listos_en_preparacion_a_listos(juego);
+        recoger_pedidos_listos(juego);
+        if (platos_listos_vacio(juego->cocina.cantidad_listos)){
+            free(juego->cocina.platos_listos);
+        }   
+    }
+}
+
+bool mozo_al_lado_mesa(juego_t juego, int pos_mesa){
+    bool mozo_cerca_mesa=false;
+    mesa_t mesa = juego.mesas[pos_mesa];
+    int i=0;
+    while(i < mesa.cantidad_lugares && !mozo_cerca_mesa){
+        coordenada_t posicion = mesa.posicion[i];   
+        coordenada_t pos_mozo = juego.mozo.posicion;   
+        if (mesa.cantidad_comensales>SIN_COMENSALES && ((abs(posicion.fil - pos_mozo.fil) <= DISTANCIA_MINIMA_MESAS) && (abs(posicion.col - pos_mozo.col) <= DISTANCIA_MINIMA_MESAS))) {
+                mozo_cerca_mesa=true;
+        }i++;   
+    }return mozo_cerca_mesa;
+}
+
+void entregar_platos_listo(juego_t* juego, int pos_mesa){
+    for(int pedido=0; pedido<juego->mozo.cantidad_bandeja; pedido++){
+        if(pos_mesa==juego->mozo.bandeja[pedido].id_mesa && juego->mesas[pos_mesa].pedido_tomado){
+            
+            if (juego->mesas[pos_mesa].cantidad_lugares==MIN_COMENSALES)
+                juego->dinero+=INDIVIDUAL_VALOR_MESA;
+            else
+                juego->dinero+=CUATRO_VALOR_MESA;
+            
+            eliminar_pedido(juego->mozo.bandeja, pedido, &juego->mozo.cantidad_bandeja);
+            juego->mesas[pos_mesa].cantidad_comensales=SIN_COMENSALES;
+            juego->mesas[pos_mesa].paciencia=0;
+            juego->mesas[pos_mesa].pedido_tomado=false;
+            printf("PEDIDO ENTREGADO %i", pos_mesa);
+        }
+    }pos_mesa++;
+}
+
+
+
+bool mozo_encima_elemento(objeto_t objetos[], char tipo_elemento ,int* pos_elemento, int tope_objetos, coordenada_t pos_mozo){
+    bool mozo_sobre_elemento=false;
+    int primera_pos = primera_pos_elemento(objetos, tope_objetos, tipo_elemento);
+    int ultima_pos_elemento=(primera_pos+cantidad_elemento(objetos, tipo_elemento, tope_objetos));
+    while(primera_pos<ultima_pos_elemento && !mozo_sobre_elemento){
+        if (!posiciones_distintas(pos_mozo, objetos[primera_pos].posicion)){
+            mozo_sobre_elemento=true;
+            *pos_elemento=primera_pos;
+        }
+        primera_pos++;
+    }return mozo_sobre_elemento;
+}
+bool mozo_encima_moneda(juego_t juego, int* pos_moneda){
+    bool mozo_sobre_moneda=false;
+    int moneda = primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MONEDA);
+    int ultima_pos_moneda=(moneda+cantidad_elemento(juego.herramientas, MONEDA, juego.cantidad_herramientas));
+    while(moneda<ultima_pos_moneda && !mozo_sobre_moneda){
+        if (!posiciones_distintas(juego.mozo.posicion, juego.herramientas[moneda].posicion)){
+            mozo_sobre_moneda=true;
+            *pos_moneda=moneda;
+        }
+        moneda++;
+    }return mozo_sobre_moneda;
+}
+
+void recoger_moneda(juego_t* juego, int pos_moneda){
+    eliminar_elemento_especifico(juego->herramientas, pos_moneda, &juego->cantidad_herramientas);
+    juego->dinero+=DINERO_DE_MONEDAS;
+}
+
+void dejar_platos_con_mopa_mensaje(){
+    printf(AMARILLO_COLOR TEXTO_NEGRITA"TIENES LA MOPA -> NO PUEDES ENTREGAR PLATOS A ESTA MESA"REINICIO_COLOR);
+}
+
+
+void recoger_patines(juego_t* juego, int pos_patin){
+    eliminar_elemento_especifico(juego->herramientas, pos_patin, &juego->cantidad_herramientas);
+    juego->mozo.cantidad_patines++;
+}
+
+void descartar_pedidos_y_platos(pedido_t* pedido, int id_mesa, int* cant_pedidos){
+    for (int i = 0; i < cant_pedidos; i++){
+        if (pedido[i].id_mesa==id_mesa)
+            eliminar_pedido(pedido, i, cant_pedidos);
+    }
+}
+
+void comensales_se_van_quedan_sin_paciencia(juego_t* juego, int num_id_mesa){
+    juego->mesas[num_id_mesa].cantidad_comensales=SIN_COMENSALES;
+    juego->mesas[num_id_mesa].pedido_tomado=false;
+    descartar_pedidos_y_platos(juego->mozo.pedidos, num_id_mesa, juego->mozo.cantidad_pedidos);
+    descartar_pedidos_y_platos(juego->mozo.bandeja, num_id_mesa, juego->mozo.cantidad_bandeja);
+    descartar_pedidos_y_platos(juego->cocina.platos_preparacion, num_id_mesa, juego->cocina.cantidad_preparacion);
+    descartar_pedidos_y_platos(juego->cocina.platos_listos, num_id_mesa, juego->cocina.cantidad_listos);
+}
+
+void bajar_paciencia_mesa_por_mov(juego_t* juego){
+    int i=0;
+    while (i<juego->cantidad_mesas){
+        if (juego->mesas[i].cantidad_comensales>0){
+            juego->mesas[i].paciencia--;
+            if (juego->mesas[i].paciencia<=0){
+                comensales_se_van_quedan_sin_paciencia(juego, i);
+            }
+        }i++;
+    }
+}
+
 
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -504,9 +864,31 @@ void movimiento_hacia_arriba(juego_t* juego){
     juego->mozo.posicion.fil--;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_ARRIBA);
-    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
+
+    if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
+        interaccion_mozo_con_cocina(juego);
+
+    for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
+        if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
+            if (juego->mozo.tiene_mopa){
+                dejar_platos_con_mopa_mensaje();
+            }else{
+                entregar_platos_listo(juego, pos_mesa);
+            }
+        }
     }
+    int pos_aux=-1;
+    if(mozo_encima_elemento(juego->herramientas, MONEDA, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_moneda(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_patines(juego, pos_aux);
+    }
+
+    bajar_paciencia_mesa_por_mov(juego);
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -518,9 +900,31 @@ void movimiento_hacia_abajo(juego_t* juego){
     juego->mozo.posicion.fil++;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_ABAJO);
-    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
+
+    if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
+        interaccion_mozo_con_cocina(juego);
+
+    for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
+        if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
+            if (juego->mozo.tiene_mopa){
+                dejar_platos_con_mopa_mensaje();
+            }else{
+                entregar_platos_listo(juego, pos_mesa);
+            }
+        }
     }
+
+    int pos_aux=-1;
+    if(mozo_encima_elemento(juego->herramientas, MONEDA, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_moneda(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_patines(juego, pos_aux);
+    }
+    bajar_paciencia_mesa_por_mov(juego);
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -532,9 +936,32 @@ void movimiento_hacia_derecha(juego_t* juego){
     juego->mozo.posicion.col++;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_DERECHA);
-    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
+
+    if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
+        interaccion_mozo_con_cocina(juego);
+    
+    for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
+        if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
+            if (juego->mozo.tiene_mopa){
+                dejar_platos_con_mopa_mensaje();
+            }else{
+                entregar_platos_listo(juego, pos_mesa);
+            }
+        }
     }
+
+    int pos_aux=-1;
+    if(mozo_encima_elemento(juego->herramientas, MONEDA, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_moneda(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_patines(juego, pos_aux);
+    }
+
+    bajar_paciencia_mesa_por_mov(juego);
 }
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -546,9 +973,32 @@ void movimiento_hacia_izquierda(juego_t* juego){
     juego->mozo.posicion.col--;
     juego->movimientos++;
     comprobar_dezplazamiento_valido(juego, ACCION_IZQUIERDA);
-    if (aux!=juego->movimientos && (juego->movimientos % 15)==0){
+    if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
+    
+    if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
+        interaccion_mozo_con_cocina(juego);
+
+    for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
+        if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
+            if (juego->mozo.tiene_mopa){
+                dejar_platos_con_mopa_mensaje();
+            }else{
+                entregar_platos_listo(juego, pos_mesa);
+            }
+        }
     }
+    int pos_aux=-1;
+    if(mozo_encima_elemento(juego->herramientas, MONEDA, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_moneda(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
+        recoger_patines(juego, pos_aux);
+    }
+
+    bajar_paciencia_mesa_por_mov(juego);
+    
 }
 /*
 *   Pre condiciones: -
@@ -606,18 +1056,18 @@ bool mozo_con_mopa_y_coordenada_desocupada(juego_t* juego){
 *                     un mensaje al usuario.
 */
 void accion_agarrar_o_soltar_mopa(juego_t* juego){
-    coordenada_t posicion_mopa=juego->herramientas[LUGAR_MOPA].posicion;
+    coordenada_t posicion_mopa=juego->herramientas[primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MOPA)].posicion;
     coordenada_t posicion_mozo=juego->mozo.posicion;
     if (mozo_sin_mopa_y_mozo_lejos_de_mopa(*juego, posicion_mopa, posicion_mozo)){
-        printf("     ---¡¡¡NO PUEDES RECOGER LA MOPA, NO TE ENCUENTRAS ENCIMA DE ELLA!!!---\n");
+        printf(AMARILLO_COLOR"     ---¡¡¡NO PUEDES RECOGER LA MOPA, NO TE ENCUENTRAS ENCIMA DE ELLA!!!---"TEXTO_NEGRITA);
     }else if (mozo_sin_mopa_y_mozo_encima_de_mopa(*juego, posicion_mopa, posicion_mozo)){
         estado_mopa_recogida(juego);
-        printf("     ---RECOGISTE LA MOPA---\n");
+        printf(VERDE_COLOR"     ---RECOGISTE LA MOPA---"TEXTO_NEGRITA);
     }else if (mozo_con_mopa_y_coordenada_desocupada(juego)){
         estado_mopa_soltada(juego);
-        printf("     ---SOLTASTE LA MOPA EN TU POSICION ACTUAL---\n");
+        printf(VERDE_COLOR"     ---SOLTASTE LA MOPA EN TU POSICION ACTUAL---"TEXTO_NEGRITA);
     }else
-        printf("     ---¡¡¡NO PUEDES SOLTAR LA MOPA EN ESTA POSICION!!!---\n");  
+        printf(AMARILLO_COLOR"     ---¡¡¡NO PUEDES SOLTAR LA MOPA EN ESTA POSICION!!!---"TEXTO_NEGRITA);  
 }
 /*
 *   Pre condiciones: La accion debe ser una accion válida y la posicion debe ser el campo posicion del campo
@@ -655,6 +1105,94 @@ bool es_accion_derecha_y_no_sale_del_terreno(char accion, coordenada_t posicion)
 bool es_accion_izquierda_y_no_sale_del_terreno(char accion, coordenada_t posicion){
     return ((accion==ACCION_IZQUIERDA) && (posicion.col!=0));
 }
+
+
+
+void tomar_pedido(juego_t* juego, int pos_mesa){
+    int tiempo_mayor_preparacion_platos=0;
+
+    juego->mozo.pedidos[juego->mozo.cantidad_pedidos].cantidad_platos=juego->mesas[pos_mesa].cantidad_comensales;
+
+    juego->mozo.pedidos[juego->mozo.cantidad_pedidos].id_mesa=pos_mesa;
+    for (int i = 0; i < juego->mesas[pos_mesa].cantidad_comensales; i++){
+        int pedido=(rand() % 4) + 1;
+        if (pedido==MILANESA_NAPO_REP){
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[i]=MILANESA_NAPO;
+            if (tiempo_mayor_preparacion_platos<TIMER_MILANESA_NAPO)
+                tiempo_mayor_preparacion_platos=TIMER_MILANESA_NAPO;
+        }
+        else if (pedido==HAMBURGUESA_REP){
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[i]=HAMBURGUESA;
+            if (tiempo_mayor_preparacion_platos<TIMER_HAMBURGUESA)
+                tiempo_mayor_preparacion_platos=TIMER_HAMBURGUESA;
+        }
+        else if (pedido==PARRILLA_REP){
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[i]=PARRILLA;
+            if (tiempo_mayor_preparacion_platos<TIMER_PARRILLA)
+                tiempo_mayor_preparacion_platos=TIMER_PARRILLA;
+        }
+        else if (pedido==RATATOUILLE_REP){
+            juego->mozo.pedidos[juego->mozo.cantidad_pedidos].platos[i]=RATATOUILLE;
+            if (tiempo_mayor_preparacion_platos<TIMER_RATATOUILLE)
+                tiempo_mayor_preparacion_platos=TIMER_RATATOUILLE;
+        }
+    }    
+    juego->mozo.pedidos[juego->mozo.cantidad_pedidos].tiempo_preparacion=tiempo_mayor_preparacion_platos;
+    juego->mozo.cantidad_pedidos++;
+}
+
+void accion_tomar_pedido(juego_t* juego){
+    int pos_mesa;
+    bool un_pedido_tomado=false;
+    for (pos_mesa=0; pos_mesa<juego->cantidad_mesas ; pos_mesa++){
+        if (mozo_al_lado_mesa(*juego, pos_mesa) && !juego->mesas[pos_mesa].pedido_tomado){
+            if ((juego->mozo.cantidad_pedidos)>=MAX_PEDIDOS){
+                printf(AMARILLO_COLOR"HAY PEDIDOS POR TOMAR, PERO NO PUEDES TOMARLOS PORQUE NO CABEN EN TUS MANOS");
+                pos_mesa=juego->cantidad_mesas;
+            }else{
+                juego->mesas[pos_mesa].pedido_tomado=true;
+                tomar_pedido(juego, pos_mesa);
+                printf(VERDE_COLOR"HAZ TOMA EL PEDIDO DE LA MESA N°-%i\n"TEXTO_NEGRITA, pos_mesa);
+                un_pedido_tomado=true;
+            }
+        }else if (!un_pedido_tomado && !mozo_al_lado_mesa(*juego, pos_mesa) && pos_mesa==(juego->cantidad_mesas-1)){
+            printf(AMARILLO_COLOR"NO HAS TOMADO NINGUN PEDIDO, LEJOS DE MESA CON COMENSALES SIN PEDIDO TOMADO"TEXTO_NEGRITA);
+        }
+    }
+}
+
+void cocina_mensaje_por_tener_mopa(){
+    printf(AMARILLO_COLOR TEXTO_NEGRITA"\t--NO PUEDES DEJAR PEDIDOS NI AGARRA PLATOS LISTOS YA QUE TIENES LA MOPA--"REINICIO_COLOR);
+}
+
+bool es_accion_de_movimiento(char accion){
+    return(accion==ACCION_ARRIBA || accion==ACCION_ABAJO || accion==ACCION_DERECHA || accion==ACCION_IZQUIERDA);
+}
+
+void asignar_respuesto_mesa(mesa_t repuesto_mesas[], mesa_t mesas[], int tope_mesas){
+    for(int i=0; i<tope_mesas;i++){
+        repuesto_mesas[i]=mesas[i];
+    }
+}
+
+void desplazamiento_con_patin(juego_t* juego, char accion){
+    int cant_movimientos_actuales=juego->movimientos;
+    mesa_t repuesto_mesas[MAX_MESAS];
+    asignar_respuesto_mesa(repuesto_mesas, juego->mesas, juego->cantidad_mesas);
+    coordenada_t pos_mozo_anterior;
+    pos_mozo_anterior.fil=-1;
+    pos_mozo_anterior.col=-1;
+    juego->mozo.patines_puestos=false;
+    while (posiciones_distintas(pos_mozo_anterior, juego->mozo.posicion) && es_accion_de_movimiento(accion)){
+        pos_mozo_anterior=juego->mozo.posicion;
+        asignar_respuesto_mesa(juego->mesas, repuesto_mesas, juego->cantidad_mesas);
+        realizar_jugada(juego, accion);
+    }
+    if (es_accion_de_movimiento(accion)){
+        juego->movimientos=(cant_movimientos_actuales+1);   
+    }
+}
+
 /*
 * Pre condiciones: El juego debe estar inicializado previamente con `inicializar_juego ` y la acción
 * debe ser válida.
@@ -662,7 +1200,9 @@ bool es_accion_izquierda_y_no_sale_del_terreno(char accion, coordenada_t posicio
 * implementará el funcionamiento para mover al jugador y agarrar/soltar la mopa.
 */
 void realizar_jugada(juego_t *juego , char accion){
-    if (es_accion_arriba_y_no_sale_del_terreno(accion, juego->mozo.posicion)){
+    if (juego->mozo.patines_puestos){
+        desplazamiento_con_patin(juego, accion);
+    }else if (es_accion_arriba_y_no_sale_del_terreno(accion, juego->mozo.posicion)){
         movimiento_hacia_arriba(juego);
     }else if (es_accion_abajo_y_no_sale_del_terreno(accion, juego->mozo.posicion)){
         movimiento_hacia_abajo(juego);
@@ -672,6 +1212,14 @@ void realizar_jugada(juego_t *juego , char accion){
         movimiento_hacia_izquierda(juego);
     }else if (accion==AGARRA_O_SOLTAR_MOPA){
         accion_agarrar_o_soltar_mopa(juego);
+    }else if (accion==TOMAR_PEDIDO){
+        if(!juego->mozo.tiene_mopa)
+            accion_tomar_pedido(juego);
+        else
+            cocina_mensaje_por_tener_mopa();
+    }else if (accion==PONERSE_PATINES && juego->mozo.cantidad_patines>0 && !juego->mozo.patines_puestos && !juego->mozo.tiene_mopa){
+        juego->mozo.patines_puestos=true;
+        juego->mozo.cantidad_patines--;
     }
 }
 /*
@@ -684,9 +1232,10 @@ void realizar_jugada(juego_t *juego , char accion){
 * Se dará por perdido si se termina el día y no se llegó al monto.
 */
 int estado_juego(juego_t juego){
-    if (juego.movimientos==MAX_MOVIMIENTOS){
+    if (juego.movimientos==MAX_MOVIMIENTOS && juego.dinero<DINERO_NECESARIO){
         return JUEGO_PERDIDO;
-    }if (juego.dinero>=DINERO_NECESARIO){
+    }
+    else if (juego.movimientos==MAX_MOVIMIENTOS && juego.dinero>=DINERO_NECESARIO){
         return JUEGO_GANADO;
     }
     return JUEGO_EN_CURSO;
@@ -720,6 +1269,7 @@ void imprimir_barra(){
     }
     printf("\n");
 }
+
 /*
 *   Pre condiciones: El terreno debe estar inicializado con los elementos de juego y juego debe estar
 *                    inicializado con 'inicializar_juego'.
@@ -727,16 +1277,27 @@ void imprimir_barra(){
 *                     de los pedidos.
 */
 void imprimir_terreno_y_pedidos(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
-    int mesa=0;
+    int pedido=0;
     for (int fila = 0; fila < MAX_FILAS; fila++){
         for (int columna = 0; columna < MAX_COLUMNAS; columna++){
             printf("|");
-            printf(" %c ", terreno[fila][columna]);
+            if (terreno[fila][columna]==LUGAR_OCUPADO){
+                printf("\033[31m %c \033[0m", terreno[fila][columna]);
+            }
+            else
+                printf(" %c ", terreno[fila][columna]);
             if (columna==(MAX_COLUMNAS-1)){
                 printf("|  ");
-                if ( fila%2==0){
-                    printf("[PEDIDO MESA N°%i-%i]\n", (mesa+1), juego.mozo.pedidos[mesa].id_mesa);
-                    mesa++;
+                if ((fila%2==0)){
+                    if (juego.mozo.cantidad_pedidos>0 && pedido<juego.mozo.cantidad_pedidos){
+                        printf("\033[3%im[PEDIDO MESA N°%i]\t"REINICIO_COLOR, (pedido+1), juego.mozo.pedidos[pedido].id_mesa);
+                    }else
+                        printf("\t\t  ");
+                    if (juego.cocina.cantidad_preparacion>0 && pedido<juego.cocina.cantidad_preparacion){
+                        printf("\033[3%im[PEDIDO MESA N°%i -Listo en MOV->%i]"REINICIO_COLOR, (pedido+1), juego.cocina.platos_preparacion[pedido].id_mesa, juego.cocina.platos_preparacion[pedido].tiempo_preparacion);
+                    }
+                    printf("\n");
+                    pedido++;
                 }else
                     printf("\n");
             }
@@ -750,7 +1311,7 @@ void imprimir_terreno_y_pedidos(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t j
 */
 char caracter_mopa(juego_t juego){
     if (juego.mozo.tiene_mopa)
-        return juego.herramientas[LUGAR_MOPA].tipo;
+        return MOPA;
     return VACIO;
 }
 /*
@@ -772,6 +1333,7 @@ void mostrar_juego(juego_t juego){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno_vacio(terreno);
     cambiar_elementos_del_terreno(terreno, juego);
+    printf(AMARILLO_COLOR "-\n" REINICIO_COLOR);
     imprimir_acciones_validas();
     imprimir_barra();
     imprimir_terreno_y_pedidos(terreno, juego);

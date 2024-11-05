@@ -20,8 +20,8 @@ int main(){
     while (estado_juego(juego) == JUEGO_EN_CURSO_MAIN){
         char accion=' ';
         obtener_accion(&accion);
-        realizar_jugada(&juego,accion);
         validacion_accion_ingresada(&accion, juego);
+        realizar_jugada(&juego,accion);
         mostrar_juego(juego);
     }if (estado_juego(juego) == JUEGO_GANADO_MAIN){
         system("clear");
