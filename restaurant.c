@@ -18,6 +18,7 @@ const int JUEGO_GANADO=1;
 /* CONVENCIONES */
 const int LARGO_DEL_TERRENO_IMPRESO_EN_PANTALLA = 81;
 const int ENTERO_INVALIDO=-1;
+const int DISTANCIA_MINIMA_CUCARACHA_DE_MESA=2;
 const int TOTAL_NUMEROS_ALEATORIOS=19;
 const int DISTANCIA_MINIMA_MESAS=1;
 const int SIN_COMENSALES=0;
@@ -36,6 +37,7 @@ const char MESA='T';
 const char CHARCO='H';
 const char LINGUINI='L';
 const char COCINA='C';
+const char CUCARACHA='U';
 const char VACIO=' ';
 const char LUGAR_OCUPADO='X';
 /* POSICION EN VECTORES */
@@ -254,7 +256,7 @@ bool coordenada_libre_de_patin(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
     int lugar_patin = primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, PATIN);
     int cant_patines=cantidad_elemento(juego->herramientas, PATIN, juego->cantidad_herramientas);
-    while ((no_esta_ocupada) && (lugar_patin<=cant_patines)){
+    while ((no_esta_ocupada) && (lugar_patin<(lugar_patin+cant_patines)) && pos_vector_valida(lugar_patin, juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_patin].posicion!=posicion){
             no_esta_ocupada=posiciones_distintas(*posicion, juego->herramientas[lugar_patin].posicion);
         }lugar_patin++;
@@ -269,8 +271,9 @@ bool coordenada_libre_de_patin(juego_t* juego, coordenada_t* posicion){
 */
 bool coordenada_libre_de_charco(juego_t* juego, coordenada_t* posicion){
     bool no_esta_ocupada=true;
-    int lugar_charco = PRIMER_LUGAR_CHARCO;
-    while ((no_esta_ocupada) && (lugar_charco<ULTIMO_LUGAR_CHARCO)){
+    int lugar_charco = primera_pos_elemento(juego->obstaculos, juego->cantidad_obstaculos, CHARCO);
+    int cant_charcos = cantidad_elemento(juego->obstaculos, CHARCO, juego->cantidad_obstaculos);
+    while ((no_esta_ocupada) && (lugar_charco<(lugar_charco+cant_charcos)) && pos_vector_valida(lugar_charco, juego->cantidad_obstaculos)){
         if (&juego->obstaculos[lugar_charco].posicion!=posicion){
             no_esta_ocupada=posiciones_distintas(*posicion, juego->obstaculos[lugar_charco].posicion);
         }lugar_charco++;
@@ -408,6 +411,8 @@ void inicializar_posiciones_mesas(juego_t* juego){
 void inicializar_campos_cocina(juego_t* juego){
     juego->cocina.cantidad_preparacion=0;
     juego->cocina.cantidad_listos=0;
+    juego->cocina.platos_preparacion=NULL;
+    juego->cocina.platos_listos=NULL;
 }
 
 /*
@@ -647,7 +652,7 @@ bool mozo_con_pedidos(int cantidad_pedidos){
 }
 
 void preparacion_asignar_o_redimensionar_memoria(juego_t* juego){
-    if (juego->cocina.cantidad_preparacion>0){
+    if (juego->cocina.platos_preparacion!=NULL){
         platos_preparacion_redimensionar(juego, juego->mozo.cantidad_pedidos+juego->cocina.cantidad_preparacion);
     }else{
         platos_preparacion_asignar_memoria(juego, juego->mozo.cantidad_pedidos);
@@ -684,7 +689,7 @@ bool platos_listos_vacio(int cant_platos_listos){
 }
 
 void listos_asignar_o_redimensionar_memoria(juego_t* juego){
-    if (platos_listos_vacio(juego->cocina.cantidad_listos))
+    if (juego->cocina.platos_listos==NULL)
         platos_listos_asignar_memoria(juego, cantidad_pedidos_listos_en_cocina(*juego));
     else
         platos_listos_redimensionar(juego, juego->cocina.cantidad_listos+cantidad_pedidos_listos_en_cocina(*juego));
@@ -701,7 +706,8 @@ bool mozo_con_espacio_bandeja(int cant_bandeja){
 
 void mover_platos(juego_t* juego, int* pedidos_listos){
     int contador=0;
-    while(juego->cocina.cantidad_preparacion>SIN_PLATOS && *pedidos_listos<cantidad_pedidos_listos_en_cocina(*juego) && contador<cantidad_pedidos_listos_en_cocina(*juego)){
+    int cant_pedidos_listos=cantidad_pedidos_listos_en_cocina(*juego);
+    while(juego->cocina.cantidad_preparacion>SIN_PLATOS && *pedidos_listos<cant_pedidos_listos && contador<cant_pedidos_listos){
         if (juego->movimientos>=juego->cocina.platos_preparacion->tiempo_preparacion){
             juego->cocina.platos_listos[*pedidos_listos]=*juego->cocina.platos_preparacion;
             printf("IDMESA %i", juego->cocina.platos_preparacion->id_mesa);
@@ -714,11 +720,8 @@ void mover_platos(juego_t* juego, int* pedidos_listos){
 }
 
 void actualizar_platos_preparacion(juego_t* juego, int pedidos_listos){
-    if (juego->cocina.cantidad_preparacion>0){
+    if (juego->cocina.cantidad_preparacion>0)
         platos_preparacion_redimensionar(juego, juego->cocina.cantidad_preparacion);
-    }else if (juego->cocina.cantidad_preparacion==0){
-        free(juego->cocina.platos_preparacion);
-    }
 }
 
 void mover_platos_listos_en_preparacion_a_listos(juego_t* juego){ 
@@ -741,14 +744,12 @@ void recoger_pedidos_listos(juego_t* juego){
 void interaccion_mozo_con_cocina(juego_t* juego){
     if(mozo_con_pedidos(juego->mozo.cantidad_pedidos))
         ingresar_pedidos_a_cocina_para_preparar(juego);
-    if (hay_pedidos_listos(*juego))
+    if (hay_pedidos_listos(*juego)){
         listos_asignar_o_redimensionar_memoria(juego);
+    }
     if (mozo_con_espacio_bandeja(juego->mozo.cantidad_bandeja) && hay_pedidos_listos(*juego)){
         mover_platos_listos_en_preparacion_a_listos(juego);
         recoger_pedidos_listos(juego);
-        if (platos_listos_vacio(juego->cocina.cantidad_listos)){
-            free(juego->cocina.platos_listos);
-        }   
     }
 }
 
@@ -826,19 +827,35 @@ void recoger_patines(juego_t* juego, int pos_patin){
 }
 
 void descartar_pedidos_y_platos(pedido_t* pedido, int id_mesa, int* cant_pedidos){
-    for (int i = 0; i < cant_pedidos; i++){
+    for (int i = 0; i < *cant_pedidos; i++){
         if (pedido[i].id_mesa==id_mesa)
             eliminar_pedido(pedido, i, cant_pedidos);
     }
 }
 
-void comensales_se_van_quedan_sin_paciencia(juego_t* juego, int num_id_mesa){
+void comensales_se_van(juego_t* juego, int num_id_mesa){
     juego->mesas[num_id_mesa].cantidad_comensales=SIN_COMENSALES;
     juego->mesas[num_id_mesa].pedido_tomado=false;
-    descartar_pedidos_y_platos(juego->mozo.pedidos, num_id_mesa, juego->mozo.cantidad_pedidos);
-    descartar_pedidos_y_platos(juego->mozo.bandeja, num_id_mesa, juego->mozo.cantidad_bandeja);
-    descartar_pedidos_y_platos(juego->cocina.platos_preparacion, num_id_mesa, juego->cocina.cantidad_preparacion);
-    descartar_pedidos_y_platos(juego->cocina.platos_listos, num_id_mesa, juego->cocina.cantidad_listos);
+    descartar_pedidos_y_platos(juego->mozo.pedidos, num_id_mesa, &juego->mozo.cantidad_pedidos);
+    descartar_pedidos_y_platos(juego->mozo.bandeja, num_id_mesa, &juego->mozo.cantidad_bandeja);
+    descartar_pedidos_y_platos(juego->cocina.platos_preparacion, num_id_mesa, &juego->cocina.cantidad_preparacion);
+    descartar_pedidos_y_platos(juego->cocina.platos_listos, num_id_mesa, &juego->cocina.cantidad_listos);
+}
+
+bool distancia_manhattan(coordenada_t primera_pos, coordenada_t segunda_pos, int dis_minima){
+    return((abs(primera_pos.fil-segunda_pos.fil)+abs(primera_pos.col- segunda_pos.col))<=dis_minima);
+}
+
+bool cucaracha_lejos_mesa(juego_t juego, int num_mesa){
+    bool cucaracha_lejos=true;
+    int pos_cucaracha=primera_pos_elemento(juego.obstaculos, juego.cantidad_obstaculos, CUCARACHA);
+    int cant_cucarachas=cantidad_elemento(juego.obstaculos, CUCARACHA, juego.cantidad_obstaculos);
+    while (pos_cucaracha<(pos_cucaracha+cant_cucarachas) && pos_vector_valida(pos_cucaracha, juego.cantidad_obstaculos) && cucaracha_lejos){
+        for (int i = 0; i < juego.mesas[num_mesa].cantidad_lugares; i++){
+            cucaracha_lejos=!distancia_manhattan(juego.obstaculos[pos_cucaracha].posicion, juego.mesas[num_mesa].posicion[i], DISTANCIA_MINIMA_CUCARACHA_DE_MESA);
+        }
+        pos_cucaracha++;
+    }return cucaracha_lejos;
 }
 
 void bajar_paciencia_mesa_por_mov(juego_t* juego){
@@ -846,13 +863,39 @@ void bajar_paciencia_mesa_por_mov(juego_t* juego){
     while (i<juego->cantidad_mesas){
         if (juego->mesas[i].cantidad_comensales>0){
             juego->mesas[i].paciencia--;
+            if (!cucaracha_lejos_mesa(*juego, i)){
+                juego->mesas[i].paciencia-=2;
+            }
+            
             if (juego->mesas[i].paciencia<=0){
-                comensales_se_van_quedan_sin_paciencia(juego, i);
+                comensales_se_van(juego, i);
             }
         }i++;
     }
 }
 
+
+
+void mozo_pisa_charco(juego_t* juego){
+    int pos_charco=-1;
+    if (juego->mozo.tiene_mopa){
+        for (int i = 0; i < cantidad_elemento(juego->obstaculos, CHARCO, juego->cantidad_obstaculos); i++){
+            if (!posiciones_distintas(juego->mozo.posicion, juego->obstaculos[i].posicion)){
+                pos_charco=i;
+            }   
+        }
+        eliminar_elemento_especifico(juego->obstaculos, pos_charco, &juego->cantidad_obstaculos);
+    }
+    else
+        for (int i = 0; i < juego->mozo.cantidad_bandeja; i++)
+            comensales_se_van(juego, juego->mozo.bandeja[i].id_mesa);
+}
+
+void aparece_cucaracha(juego_t* juego){
+    juego->obstaculos[juego->cantidad_obstaculos].tipo=CUCARACHA;
+    cambiar_a_cordenadas_desocupadas(juego, &juego->obstaculos[juego->cantidad_obstaculos].posicion);
+    juego->cantidad_obstaculos+=1;
+}
 
 /*
 *   Pre condiciones: El campo mozo y movimientos de juego deben estar inicializados previamente.
@@ -867,8 +910,12 @@ void movimiento_hacia_arriba(juego_t* juego){
     if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
 
+    if (aux!=juego->movimientos && (juego->movimientos % 25)==0)
+        aparece_cucaracha(juego);
+
     if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
         interaccion_mozo_con_cocina(juego);
+    
 
     for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
         if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
@@ -887,6 +934,14 @@ void movimiento_hacia_arriba(juego_t* juego){
     if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
         recoger_patines(juego, pos_aux);
     }
+
+    if (mozo_encima_elemento(juego->obstaculos, CHARCO, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        mozo_pisa_charco(juego);
+    }
+
+    if (mozo_encima_elemento(juego->obstaculos, CUCARACHA, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion) && !juego->mozo.tiene_mopa){
+        eliminar_elemento_especifico(juego->obstaculos, pos_aux, &juego->cantidad_obstaculos);
+    }    
 
     bajar_paciencia_mesa_por_mov(juego);
 }
@@ -903,6 +958,9 @@ void movimiento_hacia_abajo(juego_t* juego){
     if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
 
+    if (aux!=juego->movimientos && (juego->movimientos % 25)==0)
+        aparece_cucaracha(juego);
+
     if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
         interaccion_mozo_con_cocina(juego);
 
@@ -924,6 +982,15 @@ void movimiento_hacia_abajo(juego_t* juego){
     if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
         recoger_patines(juego, pos_aux);
     }
+
+    if (mozo_encima_elemento(juego->obstaculos, CHARCO, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        mozo_pisa_charco(juego);
+    }
+
+    if (mozo_encima_elemento(juego->obstaculos, CUCARACHA, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        eliminar_elemento_especifico(juego->obstaculos, pos_aux, &juego->cantidad_obstaculos);
+    }
+
     bajar_paciencia_mesa_por_mov(juego);
 }
 /*
@@ -939,9 +1006,12 @@ void movimiento_hacia_derecha(juego_t* juego){
     if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
 
+    if (aux!=juego->movimientos && (juego->movimientos % 25)==0)
+        aparece_cucaracha(juego);
+
     if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
         interaccion_mozo_con_cocina(juego);
-    
+
     for (int pos_mesa = 0; pos_mesa < juego->cantidad_mesas; pos_mesa++){
         if(juego->mozo.cantidad_bandeja>0 && mozo_al_lado_mesa(*juego, pos_mesa)){
             if (juego->mozo.tiene_mopa){
@@ -959,6 +1029,14 @@ void movimiento_hacia_derecha(juego_t* juego){
 
     if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
         recoger_patines(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->obstaculos, CHARCO, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        mozo_pisa_charco(juego);
+    }
+    
+    if (mozo_encima_elemento(juego->obstaculos, CUCARACHA, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        eliminar_elemento_especifico(juego->obstaculos, pos_aux, &juego->cantidad_obstaculos);
     }
 
     bajar_paciencia_mesa_por_mov(juego);
@@ -975,6 +1053,9 @@ void movimiento_hacia_izquierda(juego_t* juego){
     comprobar_dezplazamiento_valido(juego, ACCION_IZQUIERDA);
     if (aux!=juego->movimientos && (juego->movimientos % 15)==0)
         llegada_comensales(juego);
+
+    if (aux!=juego->movimientos && (juego->movimientos % 25)==0)
+        aparece_cucaracha(juego);
     
     if (mozo_encima_cocina(*juego) && !juego->mozo.tiene_mopa)
         interaccion_mozo_con_cocina(juego);
@@ -995,6 +1076,14 @@ void movimiento_hacia_izquierda(juego_t* juego){
 
     if (mozo_encima_elemento(juego->herramientas, PATIN, &pos_aux, juego->cantidad_herramientas, juego->mozo.posicion)){
         recoger_patines(juego, pos_aux);
+    }
+
+    if (mozo_encima_elemento(juego->obstaculos, CHARCO, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        mozo_pisa_charco(juego);
+    }
+
+    if (mozo_encima_elemento(juego->obstaculos, CUCARACHA, &pos_aux, juego->cantidad_obstaculos, juego->mozo.posicion)){
+        eliminar_elemento_especifico(juego->obstaculos, pos_aux, &juego->cantidad_obstaculos);
     }
 
     bajar_paciencia_mesa_por_mov(juego);
@@ -1256,8 +1345,8 @@ void inicializar_terreno_vacio(char terreno[MAX_FILAS][MAX_COLUMNAS]){
 *   Post condiciones: Imprime por pantalla (por encima del terreno) las acciones validas para realizar.
 */
 void imprimir_acciones_validas(){
-    printf("\t\t\t---|ACCIONES VALIDAS|---\n");
-    printf("|MOVERSE IZQUIERDA ⟹ 'A' | MOVERSE DERECHA ⟹ 'D' | MOVERSE ARRIBA ⟹ W | MOVERSE ABAJO ⟹ S | AGARRAR/SOLTAR MOPA ⟹ O|\n");
+    printf(CYAN_COLOR"\t\t\t\t\t\t    ---|ACCIONES VALIDAS|---\n"REINICIO_COLOR);
+    printf(CYAN_COLOR"    |IZQUIERDA ⟹ 'A' | DERECHA ⟹ 'D' | ARRIBA ⟹ W | ABAJO ⟹ S | AGARRAR/SOLTAR MOPA ⟹ O | ACTIVAR PATIN ⟹ 'P' | TOMAR PEDIDO ⟹ 'P'|\n"REINICIO_COLOR);
 }
 /*
 *   Pre condiciones: -
@@ -1314,15 +1403,23 @@ char caracter_mopa(juego_t juego){
         return MOPA;
     return VACIO;
 }
+
+char caracter_patin(juego_t juego){
+    if (juego.mozo.patines_puestos)
+        return PATIN;
+    return VACIO;
+    
+}
 /*
 *   Pre condiciones: juego debe estar previamente inicializado con 'inicializar juego'.
 *   Post condiciones: Imprime por pantalla si el mozo posee la mopa, imprime la cantidad de movimientos
 *                     realizados y el dinero obetnido.
 */
 void imprimir_posesion_mopa_cant_mov_dinero(juego_t juego){
-    printf("[MOPA:- %c -] ", caracter_mopa(juego));
-    printf("[CANTIDAD DE MOVIMIENTOS: - %i -] ", juego.movimientos);
-    printf("[DINERO: - $%i -] ",juego.dinero);
+    printf("[MOPA: -%c-] ", caracter_mopa(juego));
+    printf("[CANTIDAD DE MOVIMIENTOS: -%i-] ", juego.movimientos);
+    printf("[DINERO: -$%i-] ",juego.dinero);
+    printf("[PATINES: -%i-] [PATIN PUESTO: -%c-]", juego.mozo.cantidad_patines, caracter_patin(juego));
     printf("\n");
 }
 /*
@@ -1339,4 +1436,12 @@ void mostrar_juego(juego_t juego){
     imprimir_terreno_y_pedidos(terreno, juego);
     imprimir_barra();
     imprimir_posesion_mopa_cant_mov_dinero(juego);
+}
+
+/*  Pre condiciones: Los campos `platos_preparacion` y `platos_listos` del campo `cocina` del juego deben estar inicializados.
+    Post condiciones: Libera la memoria dinámica reservada para el juego.
+*/
+void destruir_juego(juego_t *juego){
+    free(juego->cocina.platos_preparacion);
+    free(juego->cocina.platos_listos);
 }

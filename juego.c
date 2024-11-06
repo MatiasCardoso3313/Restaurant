@@ -33,5 +33,7 @@ int main(){
         printf("            * se ha terminado el dia *\n\n\n\n\n\n\n\n\n\n\n");
 
     }
+    destruir_juego(&juego);
+
     return 0;
 }
