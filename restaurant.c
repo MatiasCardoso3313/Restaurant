@@ -42,12 +42,6 @@ const char VACIO=' ';
 const char LUGAR_OCUPADO='X';
 /* POSICION EN VECTORES */
 const int LUGAR_INICIAL_MOPA= 0;
-const int PRIMER_LUGAR_MONEDAS= 1;
-const int ULTIMO_LUGAR_MONEDAS= 8;
-const int PRIMER_LUGAR_PATINES= 9;
-const int ULTIMO_LUGAR_PATINES= 13;
-const int PRIMER_LUGAR_CHARCO= 0;
-const int ULTIMO_LUGAR_CHARCO= 4;
 /* CANTIDAD Y TOTALIDAD DE ELEMENTOS */
 const int MIN_COMENSALES= 1;
 const int TOTAL_MESAS_INDIVIDUALES= 6;
@@ -63,7 +57,7 @@ const char ACCION_ABAJO=  'S';
 const char AGARRA_O_SOLTAR_MOPA=  'O';
 const char TOMAR_PEDIDO='T';
 const char PONERSE_PATINES='P';
-
+/* RELACIONADO A PLATOS */
 const char MILANESA_NAPO='M';
 const int MILANESA_NAPO_REP=1;
 const int TIMER_MILANESA_NAPO=30;
@@ -77,6 +71,11 @@ const char RATATOUILLE='R';
 const int RATATOUILLE_REP=4;
 const int TIMER_RATATOUILLE=25;
 
+/*
+*   Pre condiciones: tope debe ser un numero mayor o igual a 0, elemento buscado debe ser un elemento valido.
+*   Post condiciones: Devuelve true si el elemento buscado se encuentra en el vector objetos, en caso 
+*                    contrario devuelve false.
+*/
 bool elemento_esta(objeto_t objetos[], int tope , char elemento_buscado){
 	int i =0;
 	int esta = false;
@@ -88,7 +87,11 @@ bool elemento_esta(objeto_t objetos[], int tope , char elemento_buscado){
 	}
 	return esta;
 }	
-
+/*
+*   Pre condiciones:tope debe ser mayor o igual a 0, elemento_buscado debe ser un elemento valido.
+*   Post condiciones: Busca la primera posicion del elemento_buscado y lo devuelve, si no encuentra el 
+*                    elemento devuelve -1.
+*/
 int primera_pos_elemento(objeto_t objetos[], int tope , char elemento_buscado){
 	int i =0;
     int pos_elemento=ENTERO_INVALIDO;
@@ -104,7 +107,11 @@ int primera_pos_elemento(objeto_t objetos[], int tope , char elemento_buscado){
     }
 	return pos_elemento;
 }	
-
+/*
+*   Pre condiciones: pos_elemento debe ser una posicion mayor o igual a 0 y menor que el valor de tope. Tope
+*                   debe ser mayor o igual a cero.
+*   Post condiciones: Se elimina fisica el elemento en la pos_elemento dada y disminuye el valor del tope en 1
+*/
 void eliminar_elemento_especifico(objeto_t objetos[], int pos_elemento, int* tope){
     for (int i = pos_elemento; i < *tope; i++){
         objetos[i].tipo=objetos[i+1].tipo;
@@ -112,7 +119,10 @@ void eliminar_elemento_especifico(objeto_t objetos[], int pos_elemento, int* top
     }*tope-=1;
     
 }
-
+/*
+*   Pre condiciones: elemento_a_eliminar debe ser un elemento valido, tope debe ser un numero mayor o igual a 0.
+*   Post condiciones: Elimina fisicamente el primero elemento que sea igual a elemento_a_eliminar, luego baja el valor de tope en 1.
+*/
 void eliminar_elemento( objeto_t objetos[] , char elemento_a_eliminar , int* tope ) {
 	bool esta = elemento_esta(objetos, *tope, elemento_a_eliminar);
     int pos=-1;
@@ -126,13 +136,21 @@ void eliminar_elemento( objeto_t objetos[] , char elemento_a_eliminar , int* top
         *tope-=1;
 	}
 }
+/*
+*   Pre condiciones: pos_pedido debe ser un numero mayor o igual a cero y menor que el valor de tope, tope debe ser
+*                   mayor o igual a 0.
+*   Post condiciones: Elimina el pedido en la posicion dada por parametro, luego baja el valor de tope en 1.
+*/
 void eliminar_pedido( pedido_t pedidos[] ,int pos_pedido, int* tope ) {
 	for (int i = pos_pedido; i < *tope; i++){
         pedidos[i] = pedidos[i+1];
     }
     *tope-=1;
 }
-
+/*
+*   Pre condiciones: tipo_elemento debe ser un elemento valido, tope_objetos debe ser mayor o igual a 0.
+*   Post condiciones: Cuenta la cantidad de elementos que hay en objetos y devuelve esa cantidad.
+*/
 int cantidad_elemento(objeto_t objetos[], char tipo_elemento, int tope_objetos){
     int cant_elemento=0;
     for (int i = 0; i < tope_objetos; i++){
@@ -141,24 +159,6 @@ int cantidad_elemento(objeto_t objetos[], char tipo_elemento, int tope_objetos){
     }
     return cant_elemento;
 }
-// int cantidad_monedas(juego_t juego){
-//     int cantidad_monedas=0;
-//     for (int i = 0; i < juego.cantidad_herramientas; i++){
-//         if (juego.herramientas[i].tipo==MONEDA)
-//             cantidad_monedas++;
-//     }
-//         return cantidad_monedas;
-// }
-
-int cantidad_patines(juego_t juego){
-    int cantidad_patines=0;
-    for (int i = 0; i < juego.cantidad_herramientas; i++){
-        if (juego.herramientas[i].tipo==PATIN)
-            cantidad_patines++;
-    }
-        return cantidad_patines;
-}
-
 /*
 *   Pre condiciones: El terreno debe estar inicializado con elementos válidos, y el elemento que recibe debe 
 *                   ser un ELEMENTO VÁLIDO.
@@ -219,11 +219,13 @@ bool coordenada_ocupada_con_mozo(juego_t* juego, coordenada_t* posicion){
 bool coordenada_ocupada_con_mopa(juego_t* juego, coordenada_t* posicion){
     return ((&juego->herramientas[primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MOPA)].posicion!=posicion) && (!posiciones_distintas(*posicion, juego->herramientas[primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MOPA)].posicion)));
 }
-
+/*
+*   Pre condiciones: -
+*   Post condiciones: Devuelve true si pos es mayor a 0 (inclusive) y menor a tope (estricto), caso contrario devuelve false.
+*/
 bool pos_vector_valida(int pos, int tope){
     return pos>=0 && pos<tope;
 }
-
 /*
 *   Pre condiciones: El campo de posición de los campos de las monedas de juego debe estar inicializado y posición debe
 *                    ser una posición válida.
@@ -238,7 +240,6 @@ bool coordenada_libre_de_moneda(juego_t* juego, coordenada_t* posicion){
         lugar_moneda = primera_pos_elemento(juego->herramientas, juego->cantidad_herramientas, MONEDA);
     else
         return no_esta_ocupada;
-
     while((no_esta_ocupada) && (lugar_moneda<(lugar_moneda+cant_monedas)) && pos_vector_valida(lugar_moneda, juego->cantidad_herramientas)){
         if (&juego->herramientas[lugar_moneda].posicion!=posicion){
             no_esta_ocupada=posiciones_distintas(*posicion, juego->herramientas[lugar_moneda].posicion);
@@ -291,7 +292,11 @@ bool coordenada_no_ocupada(juego_t* juego, coordenada_t* posicion){
         return false;
     return true;
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, el valor de tope debe ser mayor o igual a 0, elemento_a_insertar
+*                   debe ser un elemento valido.
+*   Post condiciones: Inserta el nuevo elemento al final de objetos.
+*/
 void insertar_elemento_final(juego_t* juego, objeto_t objetos[], int *tope, char elemento_a_insertar) {
     objetos[*tope].tipo= elemento_a_insertar;
     if (elemento_a_insertar==MOPA && coordenada_no_ocupada(juego, &juego->mozo.posicion)){
@@ -299,8 +304,6 @@ void insertar_elemento_final(juego_t* juego, objeto_t objetos[], int *tope, char
     }
     (*tope)++;
 }
-
-
 /*
 *   Pre condiciones: La variable numero de mesas debe ser valido y estar en el rango del vector de mesas
 *                    de juego.
@@ -531,7 +534,7 @@ void cambiar_elementos_del_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_
             else
                 reemplazar_elemento(terreno, MESA, juego.mesas[i].posicion[j]);
         }
-    };
+    }
     reemplazar_elemento(terreno, COCINA, juego.cocina.posicion);
     if(!juego.mozo.tiene_mopa)
         reemplazar_elemento(terreno, juego.herramientas[primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MOPA)].tipo, juego.herramientas[primera_pos_elemento(juego.herramientas, juego.cantidad_herramientas, MOPA)].posicion);
@@ -573,21 +576,39 @@ void comprobar_dezplazamiento_valido(juego_t* juego, char accion){
         juego->movimientos--;
     }
 }
-
+/*
+*   Pre condiciones: cant_comensales_entrantes debe ser un numero entre 1 y 4, ambos inclusives. pos_mesa debe ser un numero
+*                   mayor o igual a 0 y menor que 10, juego debe estar previamente inicializado.
+*   Post condiciones: Devuelve true si la cant_comensales_entrantes es igual a 1 y si la mesa no tiene comensales ocupandola, caso
+*                    contrario devuelve false.
+*/
 bool un_comensal_y_mesa_sin_comensales(juego_t juego, int cant_comensales_entrantes, int pos_mesa){
     return(cant_comensales_entrantes==MIN_COMENSALES && juego.mesas[pos_mesa].cantidad_comensales==SIN_COMENSALES);
 }
-
+/*
+*   Pre condiciones: cant_comensales_entrantes debe ser un numero entre 1 y 4, ambos inclusives. pos_mesa debe ser un numero
+*                   mayor o igual a 0 y menor que 10, juego debe estar previamente inicializado.
+*   Post condiciones: Devuelve true si la cant_comensales_entrantes es mayor a 1 y si la mesa no tiene comensales ocupandola, caso
+*                    contrario devuelve false.
+*/
 bool mas_de_un_comensal_y_mesa_sin_comensales(juego_t juego, int cant_comensales_entrantes, int pos_mesa){
     return (cant_comensales_entrantes>MIN_COMENSALES && juego.mesas[pos_mesa].cantidad_comensales==SIN_COMENSALES);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, pos_mesa debe ser mayor o igual a cero y menor que 10, 
+*                   cant_comensales_entrantes deben ser mayor o igual a 1 o menor o igual a 4.
+*   Post condiciones: Establece los campos cant_comensales, pedido_tomado y paciencia del campo mesas de juego.
+*/
 void asignar_comensales_mesa(juego_t* juego, int pos_mesa, int cant_comensales_entrantes){
     juego->mesas[pos_mesa].cantidad_comensales=cant_comensales_entrantes;
     juego->mesas[pos_mesa].pedido_tomado=false;
     juego->mesas[pos_mesa].paciencia=(rand() % 100) + 100;
 }
 
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Busca las mesas disponibles para luego asignar los correspondientes comensales si es posible.
+*/
 void llegada_comensales(juego_t* juego){
     int cant_comensales_entrantes=(rand() % 4) + 1;
     int acontador=0;
@@ -597,13 +618,19 @@ void llegada_comensales(juego_t* juego){
         if (un_comensal_y_mesa_sin_comensales(*juego, cant_comensales_entrantes, acontador)){
             asignar_comensales_mesa(juego, acontador, cant_comensales_entrantes);
             mesa_encontrada=true;
+            printf(AMARILLO_COLOR"--HAN LLEGADO NUEVOS COMENSALES EN MESA %i-"REINICIO_COLOR, acontador);
         }else if (mas_de_un_comensal_y_mesa_sin_comensales(*juego, cant_comensales_entrantes, bcontador)){
             asignar_comensales_mesa(juego, bcontador, cant_comensales_entrantes);
             mesa_encontrada=true;
+            printf(AMARILLO_COLOR"--HAN LLEGADO NUEVOS COMENSALES EN MESA %i-"REINICIO_COLOR, bcontador);
         }acontador++;bcontador++;
     }
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, tamanio debe ser un numero positivo.
+*   Post condiciones: Asigna memoria al campo platos_preparacion del campo cocina de juego, si el mismo falla
+*                    imprime un mensaje por pantalla y libera el puntero.
+*/
 void platos_preparacion_asignar_memoria(juego_t* juego, int tamanio){
     juego->cocina.platos_preparacion=(pedido_t*)malloc((size_t)((size_t)(tamanio)*sizeof(pedido_t)));
     if (juego->cocina.platos_preparacion==NULL){
@@ -611,6 +638,11 @@ void platos_preparacion_asignar_memoria(juego_t* juego, int tamanio){
         free(juego->cocina.platos_preparacion);
     }
 }
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, tamanio debe ser un numero positivo.
+*   Post condiciones: Redimensiona el campo platos_preparacion del campo cocina de juego, si el mismo falla
+*                    imprime un mensaje de error, libera el puntero y lo iguala a NULL.
+*/
 void platos_preparacion_redimensionar(juego_t* juego, int tamanio){
     pedido_t* repuesto_pedido=NULL;
     repuesto_pedido=(pedido_t*)realloc(juego->cocina.platos_preparacion, (size_t)((size_t)tamanio*sizeof(pedido_t)));
@@ -622,6 +654,11 @@ void platos_preparacion_redimensionar(juego_t* juego, int tamanio){
         juego->cocina.platos_preparacion=repuesto_pedido;
     }
 }
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, tamanio debe ser un numero positivo.
+*   Post condiciones: Asigna memoria al campo platos_listos del campo cocina de juego, si el mismo falla
+*                    imprime un mensaje por pantalla y libera el puntero.
+*/
 void platos_listos_asignar_memoria(juego_t* juego, int tamanio){
     juego->cocina.platos_listos=(pedido_t*)malloc((size_t)((size_t)(tamanio)*sizeof(pedido_t)));
     if (juego->cocina.platos_listos==NULL){
@@ -630,27 +667,43 @@ void platos_listos_asignar_memoria(juego_t* juego, int tamanio){
         juego->cocina.platos_listos=NULL;
     }
 }
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, tamanio debe ser un numero positivo.
+*   Post condiciones: Redimensiona el campo platos_listos del campo cocina de juego, si el mismo falla
+*                    imprime un mensaje de error, libera el puntero y lo iguala a NULL.
+*/
 void platos_listos_redimensionar(juego_t* juego, int tamanio){
     pedido_t* repuesto_pedido=NULL;
     repuesto_pedido=(pedido_t*)realloc(juego->cocina.platos_listos, (size_t)((size_t)tamanio*sizeof(pedido_t)));
     if (repuesto_pedido==NULL){
         printf(ROJO_COLOR"ERROR EN MEMORIA (REDIMENSION )"TEXTO_NEGRITA);
         free(juego->cocina.platos_listos);
+        juego->cocina.platos_listos=NULL;
     }else{
         juego->cocina.platos_listos=repuesto_pedido;
     }
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Devuelve true si el mozo tiene la misma fila y columna que la cocina, sino devuelve false.
+*/
 bool mozo_encima_cocina(juego_t juego){
     coordenada_t mozo_pos=juego.mozo.posicion;
     coordenada_t cocina_pos=juego.cocina.posicion;
     return((mozo_pos.fil==cocina_pos.fil) && (mozo_pos.col==cocina_pos.col));
 }
-
+/*
+*   Pre condiciones: -
+*   Post condiciones: Devuelve true si cantidad_pedidos es mayor a 0, caso contrario devuelve false.
+*/
 bool mozo_con_pedidos(int cantidad_pedidos){
     return (cantidad_pedidos>SIN_PEDIDOS);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Asigna memoria a platos.preparacion si es primera vez que se llama la funcion, 
+*                    sino redimensiona platos.preparacion. 
+*/
 void preparacion_asignar_o_redimensionar_memoria(juego_t* juego){
     if (juego->cocina.platos_preparacion!=NULL){
         platos_preparacion_redimensionar(juego, juego->mozo.cantidad_pedidos+juego->cocina.cantidad_preparacion);
@@ -658,24 +711,32 @@ void preparacion_asignar_o_redimensionar_memoria(juego_t* juego){
         platos_preparacion_asignar_memoria(juego, juego->mozo.cantidad_pedidos);
     }
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Coloca los platos del pedido del mozo en la cocina para prepararse.
+*/
 void colocar_pedidos_en_cocina(juego_t* juego){
     int platos_a_prepararse=juego->cocina.cantidad_preparacion + juego->mozo.cantidad_pedidos;
     while (juego->cocina.cantidad_preparacion<(platos_a_prepararse)){
         juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion]=juego->mozo.pedidos[0];
         eliminar_pedido(juego->mozo.pedidos, 0, &juego->mozo.cantidad_pedidos);
         juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion].tiempo_preparacion+=juego->movimientos;
-        printf("TIEMPO_PREP: %i", juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion].tiempo_preparacion);
         juego->cocina.cantidad_preparacion++;
     }
     juego->mozo.cantidad_pedidos=0;
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Asigna o redimensiona el puntero platos_preparacion luego coloca los pedidos en la cocina.
+*/
 void ingresar_pedidos_a_cocina_para_preparar(juego_t* juego){   
     preparacion_asignar_o_redimensionar_memoria(juego);
     colocar_pedidos_en_cocina(juego);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Cuenta cuantos platos en platos_preparacion cumplieron el tiempo de preparacion y devuelve esa cantidad.
+*/
 int cantidad_pedidos_listos_en_cocina(juego_t juego){
     int pedidos_listos=0;
     for(int i=0; i<juego.cocina.cantidad_preparacion; i++){
@@ -683,34 +744,48 @@ int cantidad_pedidos_listos_en_cocina(juego_t juego){
             pedidos_listos++;
     }return pedidos_listos;
 }
-
+/*
+*   Pre condiciones: cant_platos_listos debe ser mayor o igual a 0.
+*   Post condiciones: Devuelve true si cant_platos_listos es igual a cero, si es mayor devuelve false.
+*/
 bool platos_listos_vacio(int cant_platos_listos){
     return (cant_platos_listos==SIN_PLATOS);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Asigna memoria a platos_listos si es primera vez que se llama la funcion, 
+*                    sino redimensiona platos_listos. 
+*/
 void listos_asignar_o_redimensionar_memoria(juego_t* juego){
     if (juego->cocina.platos_listos==NULL)
         platos_listos_asignar_memoria(juego, cantidad_pedidos_listos_en_cocina(*juego));
     else
         platos_listos_redimensionar(juego, juego->cocina.cantidad_listos+cantidad_pedidos_listos_en_cocina(*juego));
 }
-
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Devuelve true si la cantidad de pedidos listos en la cocina son mayores a cero, sino devuelve false.
+*/
 bool hay_pedidos_listos(juego_t juego){
     return (cantidad_pedidos_listos_en_cocina(juego)>0);
 }
-
+/*
+*   Pre condiciones: -
+*   Post condiciones: Devuelve true si cant_bandeja es menor a MAX_BANDEJA, sino devuelve false.
+*/
 bool mozo_con_espacio_bandeja(int cant_bandeja){
     return(cant_bandeja<MAX_BANDEJA);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Mueve los platos del campo platos_preparacion al campo platos_listos.
+*/
 void mover_platos(juego_t* juego, int* pedidos_listos){
     int contador=0;
     int cant_pedidos_listos=cantidad_pedidos_listos_en_cocina(*juego);
     while(juego->cocina.cantidad_preparacion>SIN_PLATOS && *pedidos_listos<cant_pedidos_listos && contador<cant_pedidos_listos){
         if (juego->movimientos>=juego->cocina.platos_preparacion->tiempo_preparacion){
             juego->cocina.platos_listos[*pedidos_listos]=*juego->cocina.platos_preparacion;
-            printf("IDMESA %i", juego->cocina.platos_preparacion->id_mesa);
             eliminar_pedido(juego->cocina.platos_preparacion, 0, &juego->cocina.cantidad_preparacion);
             *pedidos_listos+=1;
             contador++;
@@ -718,29 +793,43 @@ void mover_platos(juego_t* juego, int* pedidos_listos){
             contador++;
     }
 }
-
-void actualizar_platos_preparacion(juego_t* juego, int pedidos_listos){
+/*
+*   Pre condiciones: juego debe estar previamente inicializado,
+*   Post condiciones: Si hay platos preparandose llama a la funcion que redimensiona el campo platos_preparacion.
+*/
+void actualizar_platos_preparacion(juego_t* juego){
     if (juego->cocina.cantidad_preparacion>0)
         platos_preparacion_redimensionar(juego, juego->cocina.cantidad_preparacion);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Mueve los platos listos y actualiza el tamaño del campo platos_preparacion.
+*/
 void mover_platos_listos_en_preparacion_a_listos(juego_t* juego){ 
     int pedidos_listos=0;
     mover_platos(juego, &pedidos_listos);
     juego->cocina.cantidad_listos+=pedidos_listos;
-    actualizar_platos_preparacion(juego, pedidos_listos);
+    actualizar_platos_preparacion(juego);
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: El mozo recoge los pedidos listos de la cocina y los pone en su bandeja.
+*/
 void recoger_pedidos_listos(juego_t* juego){
     while (mozo_con_espacio_bandeja(juego->mozo.cantidad_bandeja) && !platos_listos_vacio(juego->cocina.cantidad_listos)){
         juego->mozo.bandeja[juego->mozo.cantidad_bandeja]=*juego->cocina.platos_listos;
-        printf("Agarro plato listo %i", juego->cocina.platos_listos->tiempo_preparacion);
         eliminar_pedido(juego->cocina.platos_listos, 0, &juego->cocina.cantidad_listos);
-        printf("Plato listo AGARRADO %i", juego->mozo.bandeja[juego->mozo.cantidad_bandeja].tiempo_preparacion);
         juego->mozo.cantidad_bandeja++;
+        printf(VERDE_COLOR"HAS RECOGIDO EL/LOS PEDIDO/S DE LA/S MESA/S:"REINICIO_COLOR);
+        for (int i = 0; i < juego->mozo.cantidad_bandeja; i++)
+            printf(VERDE_COLOR"%i"REINICIO_COLOR, juego->mozo.bandeja[i].id_mesa);
+        
     }
 }
-
+/*
+*   Pre condiciones: juego debe estar previamente inicializado.
+*   Post condiciones: Realiza todas las interacciones del mozo con la cocina mientras se cumplan las condiciones.
+*/
 void interaccion_mozo_con_cocina(juego_t* juego){
     if(mozo_con_pedidos(juego->mozo.cantidad_pedidos))
         ingresar_pedidos_a_cocina_para_preparar(juego);
@@ -753,6 +842,13 @@ void interaccion_mozo_con_cocina(juego_t* juego){
     }
 }
 
+bool mesa_con_comensales_y_mozo_cerca(int cant_comensales, coordenada_t posicion, coordenada_t pos_mozo){
+    return(cant_comensales>SIN_COMENSALES && ((abs(posicion.fil - pos_mozo.fil) <= DISTANCIA_MINIMA_MESAS) && (abs(posicion.col - pos_mozo.col) <= DISTANCIA_MINIMA_MESAS)));
+}
+/*
+*   Pre condiciones: juego debe estar previamente inicializado, pos_mesa debe ser un numero mayor o igual a 0 y menor a 10.
+*   Post condiciones: Devuelve true si mozo esta al lado de una mesa, caso contrario devuelve false.
+*/
 bool mozo_al_lado_mesa(juego_t juego, int pos_mesa){
     bool mozo_cerca_mesa=false;
     mesa_t mesa = juego.mesas[pos_mesa];
@@ -760,8 +856,8 @@ bool mozo_al_lado_mesa(juego_t juego, int pos_mesa){
     while(i < mesa.cantidad_lugares && !mozo_cerca_mesa){
         coordenada_t posicion = mesa.posicion[i];   
         coordenada_t pos_mozo = juego.mozo.posicion;   
-        if (mesa.cantidad_comensales>SIN_COMENSALES && ((abs(posicion.fil - pos_mozo.fil) <= DISTANCIA_MINIMA_MESAS) && (abs(posicion.col - pos_mozo.col) <= DISTANCIA_MINIMA_MESAS))) {
-                mozo_cerca_mesa=true;
+        if (mesa_con_comensales_y_mozo_cerca(juego.mesas[i].cantidad_comensales, posicion, pos_mozo)) {
+            mozo_cerca_mesa=true;
         }i++;   
     }return mozo_cerca_mesa;
 }
@@ -885,6 +981,7 @@ void mozo_pisa_charco(juego_t* juego){
             }   
         }
         eliminar_elemento_especifico(juego->obstaculos, pos_charco, &juego->cantidad_obstaculos);
+        printf(VERDE_COLOR"---HAS LIMPIADO UN CHARCO--"REINICIO_COLOR);
     }
     else
         for (int i = 0; i < juego->mozo.cantidad_bandeja; i++)
