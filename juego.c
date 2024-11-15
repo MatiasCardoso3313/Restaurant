@@ -23,16 +23,8 @@ int main(){
         validacion_accion_ingresada(&accion, juego);
         realizar_jugada(&juego,accion);
         mostrar_juego(juego);
-    }if (estado_juego(juego) == JUEGO_GANADO_MAIN){
-        system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t-|G A N A S T E|-\n");
-        printf("     * se ha llegado al objetivo de dinero *\n\n\n\n\n\n\n\n\n\n\n");
-    }else if(estado_juego(juego) == JUEGO_PERDIDO_MAIN){
-        system("clear");
-        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t-|P E R D I S T E|-\n");
-        printf("            * se ha terminado el dia *\n\n\n\n\n\n\n\n\n\n\n");
-
     }
+    juego_finalizado(juego);
     destruir_juego(&juego);
 
     return 0;

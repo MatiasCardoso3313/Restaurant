@@ -17,6 +17,8 @@ const char AGARRA_O_SOLTAR_MOPA_COMP='O';
 const char TOMAR_PEDIDO_COMP='T';
 const char USAR_PATIN_COMP='P';
 
+const int JUEGO_GANADO_COMP=1;
+const int JUEGO_PERDIDO_COMP=-1;
 bool no_es_accion_valida(char accion){
     return (accion!= ACCION_ABAJO_COMP && accion!= ACCION_ARRIBA_COMP && accion!=ACCION_DERECHA_COMP && accion!=ACCION_IZQUIERDA_COMP && accion!=AGARRA_O_SOLTAR_MOPA_COMP && accion!=TOMAR_PEDIDO_COMP && accion!=USAR_PATIN_COMP);
 }
@@ -37,3 +39,15 @@ void obtener_accion(char* accion){
     system("clear");
 }
 
+void juego_finalizado(juego_t juego){
+    if (estado_juego(juego) == JUEGO_GANADO_COMP){
+        system("clear");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t-|G A N A S T E|-\n");
+        printf("     * se ha llegado al objetivo de dinero *\n\n\n\n\n\n\n\n\n\n\n");
+    }else if(estado_juego(juego) == JUEGO_PERDIDO_COMP){
+        system("clear");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t-|P E R D I S T E|-\n");
+        printf("            * se ha terminado el dia *\n\n\n\n\n\n\n\n\n\n\n");
+    }
+
+}
