@@ -1,0 +1,22 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "build",
+			"command": "clang",
+			"args": [
+				"-g",
+				"*.c",
+				"-o",
+				"${workspaceFolder}/juego",
+				"-std=c99",
+				"-Wall",
+				"-Wconversion",
+				"-Werror",
+				"-lm"
+			],
+			"group": "build",
+		}
+	]
+}
