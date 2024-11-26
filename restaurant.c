@@ -806,10 +806,10 @@ bool mozo_con_pedidos(int cantidad_pedidos){
 *                    sino redimensiona platos.preparacion. 
 */
 void preparacion_asignar_o_redimensionar_memoria(juego_t* juego){
-    if (juego->cocina.platos_preparacion!=NULL){
-        platos_preparacion_redimensionar(juego, juego->mozo.cantidad_pedidos+juego->cocina.cantidad_preparacion);
-    }else{
+    if (juego->cocina.platos_preparacion==NULL){
         platos_preparacion_asignar_memoria(juego, juego->mozo.cantidad_pedidos);
+    }else{
+        platos_preparacion_redimensionar(juego, juego->mozo.cantidad_pedidos+juego->cocina.cantidad_preparacion);
     }
 }
 /*
@@ -883,10 +883,10 @@ bool mozo_con_espacio_bandeja(int cant_bandeja){
 void mover_platos(juego_t* juego, int pos_plato){
     int contador=VALOR_NULO;
     int cant_pedidos_listos=cantidad_pedidos_listos_en_cocina(*juego)+juego->cocina.cantidad_listos;
-    while(juego->cocina.cantidad_preparacion>SIN_PLATOS && juego->cocina.cantidad_listos<cant_pedidos_listos && contador<cant_pedidos_listos){
-        if (juego->movimientos>=juego->cocina.platos_preparacion->tiempo_preparacion){
+    while(juego->cocina.cantidad_preparacion>SIN_PLATOS && juego->cocina.cantidad_listos<=cant_pedidos_listos && contador<cant_pedidos_listos){
+        if (juego->cocina.platos_preparacion[pos_plato].tiempo_preparacion<=TIEMPO_TERMINADO){
             juego->cocina.platos_listos[juego->cocina.cantidad_listos]=*juego->cocina.platos_preparacion;
-            eliminar_pedido(juego->cocina.platos_preparacion, PIRMERA_POS, &juego->cocina.cantidad_preparacion);
+            eliminar_pedido(juego->cocina.platos_preparacion, pos_plato, &juego->cocina.cantidad_preparacion);
             juego->cocina.cantidad_listos+=1;
             contador++;
         }else
@@ -1185,7 +1185,7 @@ void aparece_cucaracha(juego_t* juego){
 *                    de las mesas y reduce los platos en preparacion que estan en la cocina.
 */
 void bajar_paciencia_y_reducir_tiempo_platos_preparacion(juego_t* juego, int aux_mov){
-    if (aux_mov!=juego->movimientos){
+    if (aux_mov!=juego->movimientos && juego->cocina.cantidad_preparacion>SIN_PEDIDOS){
         bajar_paciencia_mesa_por_mov(juego);
         reducir_tiempo_platos_en_preparacion(juego);
     }
