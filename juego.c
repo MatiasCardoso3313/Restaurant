@@ -13,7 +13,7 @@ const int JUEGO_GANADO_MAIN=1;
 int main(){
     srand((unsigned)time(NULL));
     system("clear");
-    juego_t juego;
+    juego_t juego={0};
     inicializar_juego(&juego);
 
     mostrar_juego(juego);
